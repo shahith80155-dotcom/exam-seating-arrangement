@@ -22,11 +22,6 @@ const db = mysql.createConnection({
     database: process.env.MYSQLDATABASE,
     port: process.env.MYSQLPORT
 })
-
-db.connect(err => {
-    if(err) throw err
-    console.log("MySQL Connected")
-})
 db.connect(err => {
     if(err) throw err
     console.log("MySQL Connected")
@@ -118,12 +113,14 @@ app.post("/send-otp", (req, res) => {
     to: email,
     subject: "OTP",
     text: "Your OTP: " + otp
-}, (err, info)=>{
+}, (err, info) => {
+
     if(err){
-        console.log("MAIL ERROR:", err)   // 👈 VERY IMPORTANT
+        console.log("MAIL ERROR:", err)   // 👈 ADD HERE
         return res.send("Error sending OTP ❌")
     }
-    console.log("MAIL SENT:", info.response)  // 👈 ADD THIS
+
+    console.log("MAIL SENT:", info.response) // 👈 ADD THIS
     res.send("OTP sent ✅")
 })
 
@@ -259,7 +256,7 @@ app.post("/save-classrooms", (req, res) => {
     rooms.forEach(room => {
 
         let sql = `
-        INSERT INTO classrooms (room_name, rows, cols, bench)
+        INSERT INTO classrooms (room_name, row_count, col_count, bench)
         VALUES (?,?,?,?)`
 
         db.query(sql, [
