@@ -58,12 +58,13 @@ db.connect(err => {
 
     db.query(`
         CREATE TABLE IF NOT EXISTS classrooms (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            room_name VARCHAR(50),
-            rows INT,
-            cols INT,
-            bench INT
-        )
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_name VARCHAR(50),
+  row_count INT,
+  col_count INT,
+  bench INT
+  )
+        
     `)
 
     db.query(`
@@ -263,8 +264,8 @@ app.post("/save-classrooms", (req, res) => {
 
         db.query(sql, [
             room.room_name,
-            room.rows,
-            room.cols,
+            room.row_count,
+            room.col_count,
             bench
         ])
     })
@@ -365,8 +366,8 @@ app.get("/generate-seating", (req, res) => {
                     )
                 )
 
-                for(let r=0; r<room.rows; r++){
-                    for(let c=0; c<room.cols; c++){
+                for(let r=0; r<room.row_count; r++){
+                    for(let c=0; c<room.col_count; c++){
                         for(let b=0; b<(room.bench||1); b++){
 
                             let placed = false
