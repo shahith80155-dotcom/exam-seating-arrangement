@@ -27,7 +27,54 @@ db.connect(err => {
     if(err) throw err
     console.log("MySQL Connected")
 })
+db.connect(err => {
+    if(err) throw err
+    console.log("MySQL Connected")
 
+    // ✅ CREATE TABLES AUTOMATICALLY
+
+    db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            fname VARCHAR(100),
+            lname VARCHAR(100),
+            email VARCHAR(100),
+            dob DATE,
+            username VARCHAR(100),
+            password VARCHAR(100)
+        )
+    `)
+
+    db.query(`
+        CREATE TABLE IF NOT EXISTS students (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100),
+            regno VARCHAR(50),
+            subject VARCHAR(50),
+            dept VARCHAR(50),
+            type VARCHAR(20)
+        )
+    `)
+
+    db.query(`
+        CREATE TABLE IF NOT EXISTS classrooms (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            room_name VARCHAR(50),
+            rows INT,
+            cols INT,
+            bench INT
+        )
+    `)
+
+    db.query(`
+        CREATE TABLE IF NOT EXISTS seating_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            data JSON
+        )
+    `)
+
+    console.log("Tables ready ✅")
+})
 // MAIL
 const transporter = nodemailer.createTransport({
     service: "gmail",
