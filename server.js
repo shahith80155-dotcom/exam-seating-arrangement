@@ -32,8 +32,8 @@ db.connect(err => {
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "tempmail111356@gmail.com",
-        pass: "cijz tbsx sowb phgh"
+        user: "shahith80155@gmail.com",
+        pass: "pqzn gzfi qqxe rfby"
     }
 })
 
@@ -66,7 +66,7 @@ app.post("/send-otp", (req, res) => {
         }
 
         transporter.sendMail({
-    from: "tempmail111356@gmail.com",
+    from: "shahith80155@gmail.com",
     to: email,
     subject: "OTP",
     text: "Your OTP: " + otp
@@ -161,7 +161,7 @@ app.post("/forgot-otp", (req, res) => {
         otpStore[email] = { otp, time: Date.now() }
 
         transporter.sendMail({
-            from:"tempmail111356@gmail.com",
+            from:"shahith80155@gmail.com",
             to:email,
             subject:"Reset OTP",
             text:"OTP: "+otp
