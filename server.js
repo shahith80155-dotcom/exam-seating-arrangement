@@ -1,3 +1,4 @@
+require("dotenv").config()
 const express = require("express")
 const mysql = require("mysql2")
 const cors = require("cors")
@@ -13,10 +14,11 @@ app.use(express.json())
 
 // DB
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "saheera",
-    database: "exam_seating"
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
+    port: process.env.MYSQLPORT
 })
 
 db.connect(err => {
