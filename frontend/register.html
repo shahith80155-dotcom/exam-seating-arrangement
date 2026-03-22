@@ -200,7 +200,7 @@ let email = emailInput.value
 msg.innerText = "Sending OTP..."
 msg.style.color = "black"
 
-fetch("http://localhost:3000/send-otp",{
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/send-otp",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body: JSON.stringify({email})
@@ -252,7 +252,7 @@ otp: otpVal
 msg.innerText = "Registering..."
 msg.style.color = "black"
 
-fetch("http://localhost:3000/register",{
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/register",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body: JSON.stringify(data)

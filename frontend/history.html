@@ -11,7 +11,7 @@
 
 <script>
 
-fetch("http://localhost:3000/seating-history")
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/seating-history")
 .then(res => res.json())
 .then(data => {
 
@@ -52,7 +52,7 @@ function viewSeating(data){
 // ✅ DELETE FUNCTION
 function deleteHistory(id){
 
-    fetch(`http://localhost:3000/delete-history/${id}`, {
+    fetch(`https://exam-seating-arrangement-k7ln.onrender.com/delete-history/${id}`, {
         method: "DELETE"
     })
     .then(res => res.text())

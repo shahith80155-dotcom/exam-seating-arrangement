@@ -83,7 +83,7 @@ if(!user){
 }
 function deleteAllClassrooms(){
 
-    fetch("http://localhost:3000/delete-all-classrooms", {
+    fetch("https://exam-seating-arrangement-k7ln.onrender.com/delete-all-classrooms", {
         method: "DELETE"
     })
     .then(res => res.text())
@@ -153,7 +153,7 @@ function saveDetails(){
     }
 
     // 🔥 Send to server
-    fetch("http://localhost:3000/save-classrooms",{
+    fetch("https://exam-seating-arrangement-k7ln.onrender.com/save-classrooms",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({bench, rooms})
