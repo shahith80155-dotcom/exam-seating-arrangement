@@ -1,0 +1,446 @@
+const express = require("express")
+const mysql = require("mysql2")
+const cors = require("cors")
+const nodemailer = require("nodemailer")
+const multer = require("multer")
+const csv = require("csv-parser")
+const fs = require("fs")
+
+const upload = multer({ dest: "uploads/" })
+const app = express()
+app.use(cors())
+app.use(express.json())
+
+// DB
+const db = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "saheera",
+    database: "exam_seating"
+})
+
+db.connect(err => {
+    if(err) throw err
+    console.log("MySQL Connected")
+})
+
+// MAIL
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: "tempmail111356@gmail.com",
+        pass: "cijz tbsx sowb phgh"
+    }
+})
+
+let otpStore = {}
+
+/* ================= OTP SEND ================= */
+app.post("/send-otp", (req, res) => {
+
+    let { email } = req.body
+
+    if(!email){
+        return res.send("Email required ❌")
+    }
+
+    let check = "SELECT * FROM users WHERE email=?"
+
+    db.query(check, [email], (err, result) => {
+
+        if(err) throw err
+
+        if(result.length > 0){
+            return res.send("Email already registered ❌")
+        }
+
+        let otp = Math.floor(100000 + Math.random()*900000)
+
+        otpStore[email] = {
+            otp,
+            time: Date.now()
+        }
+
+        transporter.sendMail({
+            from: "tempmail111356@gmail.com",
+            to: email,
+            subject: "OTP",
+            text: "Your OTP: " + otp
+        }, (err)=>{
+            if(err) return res.send("Error sending OTP ❌")
+            res.send("OTP sent ✅")
+        })
+
+    })
+})
+
+/* ================= REGISTER ================= */
+app.post("/register", (req, res) => {
+
+    let { fname, lname, email, dob, username, password, otp } = req.body
+
+    if(!otpStore[email]){
+        return res.send("OTP not found ❌")
+    }
+
+    if(Date.now() - otpStore[email].time > 60000){
+        delete otpStore[email]
+        return res.send("OTP expired ⏱️")
+    }
+
+    if(otpStore[email].otp != otp){
+        return res.send("Invalid OTP ❌")
+    }
+
+    let check = "SELECT * FROM users WHERE username=?"
+
+    db.query(check, [username], (err, result) => {
+
+        if(result.length > 0){
+            return res.send("User exists ❌")
+        }
+
+        let sql = `INSERT INTO users (fname,lname,email,dob,username,password)
+                   VALUES (?,?,?,?,?,?)`
+
+        db.query(sql, [fname,lname,email,dob,username,password], err => {
+            if(err) throw err
+
+            delete otpStore[email]
+
+            res.send("Registered successfully ✅")
+        })
+
+    })
+})
+
+/* ================= LOGIN ================= */
+app.post("/login", (req, res) => {
+
+    let { username, password } = req.body
+
+    let sql = "SELECT * FROM users WHERE (username=? OR email=?) AND password=?"
+
+db.query(sql, [username, username, password], (err, result) => {
+
+        if(err){
+            return res.json({success:false, msg:"Server error ❌"})
+        }
+
+        if(result.length > 0){
+            res.json({success:true, msg:"Login success ✅"})
+        }else{
+            res.json({success:false, msg:"Invalid user or password ❌"})
+        }
+    })
+})
+
+/* ================= FORGOT OTP ================= */
+app.post("/forgot-otp", (req, res) => {
+
+    let { email } = req.body
+
+    let check = "SELECT * FROM users WHERE email=?"
+
+    db.query(check, [email], (err, result) => {
+
+        if(result.length === 0){
+            return res.send("Email not found ❌")
+        }
+
+        let otp = Math.floor(100000 + Math.random()*900000)
+
+        otpStore[email] = { otp, time: Date.now() }
+
+        transporter.sendMail({
+            from:"tempmail111356@gmail.com",
+            to:email,
+            subject:"Reset OTP",
+            text:"OTP: "+otp
+        }, err=>{
+            if(err) return res.send("Error ❌")
+            res.send("OTP sent ✅")
+        })
+
+    })
+})
+
+/* ================= RESET PASSWORD ================= */
+app.post("/reset-password", (req,res)=>{
+
+    let { email, otp, newPassword } = req.body
+
+    if(!otpStore[email]){
+        return res.send("OTP not found ❌")
+    }
+
+    if(Date.now() - otpStore[email].time > 60000){
+        delete otpStore[email]
+        return res.send("OTP expired ❌")
+    }
+
+    if(otpStore[email].otp != otp){
+        return res.send("Invalid OTP ❌")
+    }
+
+    let sql = "UPDATE users SET password=? WHERE email=?"
+
+    db.query(sql, [newPassword,email], err=>{
+        if(err) throw err
+
+        delete otpStore[email]
+
+        res.send("Password updated ✅")
+    })
+})
+
+app.post("/save-classrooms", (req, res) => {
+
+    let { bench, rooms } = req.body
+
+    // clear old data
+    db.query("DELETE FROM classrooms")
+
+    rooms.forEach(room => {
+
+        let sql = `
+        INSERT INTO classrooms (room_no, rows, cols, bench)
+        VALUES (?,?,?,?)`
+
+        db.query(sql, [room.room_no, room.rows, room.cols, bench])
+    })
+
+    res.send("Classroom details saved ✅")
+
+})
+
+
+app.post("/upload-students", upload.fields([
+    { name: "regularFile" },
+    { name: "arrearFile" }
+]), (req, res) => {
+
+    let dept = req.body.dept
+
+    let insertStudent = (filePath, type) => {
+        return new Promise((resolve) => {
+
+            let data = []
+
+            fs.createReadStream(filePath)
+            .pipe(csv())
+            .on("data", (row) => {
+                data.push([
+                    row.name,
+                    row.regno,
+                    row.subject || row.subcode || "NA",
+                    dept,
+                    type
+                ])
+            })
+            .on("end", () => {
+
+                data.forEach(s => {
+                    db.query(
+                        "INSERT INTO students (name, regno, subject, dept, type) VALUES (?,?,?,?,?)",
+                        s
+                    )
+                })
+
+                resolve()
+            })
+        })
+    }
+
+    let tasks = []
+
+    if(req.files["regularFile"]){
+        tasks.push(insertStudent(req.files["regularFile"][0].path, "regular"))
+    }
+
+    if(req.files["arrearFile"]){
+        tasks.push(insertStudent(req.files["arrearFile"][0].path, "arrear"))
+    }
+
+    Promise.all(tasks).then(()=>{
+        res.send("Students uploaded successfully ✅")
+    })
+
+})
+
+/* =========================
+   GENERATE SEATING API
+========================= */
+app.get("/generate-seating", (req, res) => {
+
+    db.query("SELECT * FROM students", (err, studentsData) => {
+        if(err) return res.send("Student fetch error ❌")
+
+        db.query("SELECT * FROM classrooms", (err, rooms) => {
+            if(err) return res.send("Room fetch error ❌")
+
+            // ✅ remove duplicates by regno ONLY
+            let seen = new Set()
+            let students = studentsData.filter(s => {
+                let reg = s.regno.trim()
+                if(seen.has(reg)) return false
+                seen.add(reg)
+                return true
+            })
+
+            // shuffle
+            students.sort(() => Math.random() - 0.5)
+
+            let allRooms = []
+
+            rooms.forEach(room => {
+
+                let grid = Array.from({ length: room.rows }, () =>
+                    Array.from({ length: room.cols }, () =>
+                        Array(room.bench || 1).fill(null)
+                    )
+                )
+
+                for(let r=0; r<room.rows; r++){
+                    for(let c=0; c<room.cols; c++){
+                        for(let b=0; b<(room.bench||1); b++){
+
+                            let placed = false
+
+                            // ✅ 1. STRICT (NO same subject + NO same dept)
+                            for(let i=0; i<students.length; i++){
+                                let s = students[i]
+
+                                if(isStrictValid(s, r, c, grid)){
+                                    placeStudent(grid, r, c, b, s)
+                                    students.splice(i,1)
+                                    placed = true
+                                    break
+                                }
+                            }
+
+                            // ✅ 2. RELAXED (ALLOW same dept BUT NOT same subject)
+                            if(!placed){
+                                for(let i=0; i<students.length; i++){
+                                    let s = students[i]
+
+                                    if(isSubjectOnlyValid(s, r, c, grid)){
+                                        placeStudent(grid, r, c, b, s)
+                                        students.splice(i,1)
+                                        placed = true
+                                        break
+                                    }
+                                }
+                            }
+
+                            // ❌ 3. NEVER place same subject → leave EMPTY
+                        }
+                    }
+                }
+
+                allRooms.push({
+                    room: room.room_no,
+                    layout: grid
+                })
+            })
+
+            // ✅ FORMAT OUTPUT (WITH SUBJECT)
+            let clean = allRooms.map(room => ({
+                room: room.room,
+                layout: room.layout.map(row =>
+                    row.map(col =>
+                        col.map(s =>
+                            s
+                            ? `${s.name}\nReg: ${s.regno}\nDept: ${s.dept}\nSub: ${s.subject}`
+                            : "Empty"
+                        )
+                    )
+                )
+            }))
+
+            let result = {
+                seating: clean,
+                unseated: students.map(s =>
+                    `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
+                ),
+                created_at: new Date()
+            }
+
+            // ✅ SAVE HISTORY
+            db.query(
+                "INSERT INTO seating_history (data) VALUES (?)",
+                [JSON.stringify(result)],
+                err => {
+                    if(err) console.log("History save error:", err)
+                }
+            )
+
+            res.json(result)
+        })
+    })
+})
+function placeStudent(grid, r, c, b, s){
+    grid[r][c][b] = {
+        name: s.name,
+        regno: s.regno,
+        dept: s.dept,
+        subject: s.subject
+    }
+}
+
+// 🔴 STRICT → no same subject + no same dept
+function isStrictValid(seat, r, c, grid){
+
+    let dirs = [[0,0],[0,-1],[0,1],[-1,0],[1,0]]
+
+    for(let d of dirs){
+        let nr = r + d[0]
+        let nc = c + d[1]
+
+        if(grid[nr] && grid[nr][nc]){
+            for(let n of grid[nr][nc]){
+                if(!n) continue
+
+                if(n.subject === seat.subject) return false
+                if(n.dept === seat.dept) return false
+            }
+        }
+    }
+
+    return true
+}
+
+// 🟡 RELAXED → allow same dept BUT NOT subject
+function isSubjectOnlyValid(seat, r, c, grid){
+
+    let dirs = [[0,0],[0,-1],[0,1],[-1,0],[1,0]]
+
+    for(let d of dirs){
+        let nr = r + d[0]
+        let nc = c + d[1]
+
+        if(grid[nr] && grid[nr][nc]){
+            for(let n of grid[nr][nc]){
+                if(!n) continue
+
+                if(n.subject === seat.subject) return false
+            }
+        }
+    }
+
+    return true
+}
+app.get("/seating-history", (req, res) => {
+
+    db.query("SELECT * FROM seating_history ORDER BY id DESC", (err, result) => {
+        if(err) return res.send("Error ❌")
+
+        let data = result.map(r => ({
+    id: r.id,
+    ...(typeof r.data === "string" ? JSON.parse(r.data) : r.data)
+}))
+
+        res.json(data)
+    })
+})
+app.listen(3000, ()=> console.log("Server running"))

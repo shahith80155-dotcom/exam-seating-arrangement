@@ -1,0 +1,3 @@
+name,regno,subject,dept,type
+Student1,4001,CS201,CSE,regular
+Student2,4002,EC301,ECE,regular

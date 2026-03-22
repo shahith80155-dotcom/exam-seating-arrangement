@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Classroom Details</title>
+
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+.classroom-container{
+    background:white;
+    padding:20px;
+    width:350px;
+    margin:auto;
+    margin-top:80px;
+    box-shadow:0 0 10px gray;
+}
+input{
+    width:90%;
+    padding:8px;
+    margin:5px;
+}
+button{
+    padding:8px 15px;
+    margin:10px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+.room-box{
+    border:1px solid #ccc;
+    padding:10px;
+    margin:10px 0;
+}
+#msg{
+    font-size:14px;
+    margin-top:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="classroom-container">
+
+<h2>Classroom Details</h2>
+
+<label>Number of Classrooms</label><br>
+<input type="number" id="roomCount" placeholder="Enter number of classrooms">
+
+<br>
+
+<label>Students per Bench</label><br>
+<input type="number" id="bench" placeholder="Students per bench">
+
+<br>
+
+<button onclick="generateRooms()">Create Classroom Fields</button>
+
+<div id="rooms"></div>
+
+<button onclick="saveDetails()">Save Details</button>
+
+<button onclick="deleteAllClassrooms()" 
+    style="background:red; color:white;">
+    Delete All Classrooms
+</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+// 🔐 protect page
+let user = localStorage.getItem("user")
+if(!user){
+    window.location.href = "login.html"
+}
+function deleteAllClassrooms(){
+
+    fetch("http://localhost:3000/delete-all-classrooms", {
+        method: "DELETE"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        document.getElementById("msg").innerText = msg
+
+        setTimeout(() => {
+            location.reload()
+        }, 1000)
+    })
+}
+// 🔥 Generate input fields
+function generateRooms(){
+
+    let count = document.getElementById("roomCount").value
+    let container = document.getElementById("rooms")
+
+    container.innerHTML = ""
+
+    for(let i=1;i<=count;i++){
+
+        container.innerHTML += `
+        <div class="room-box">
+            <h3>Classroom ${i}</h3>
+
+            <input type="text" id="name${i}" placeholder="Room Name (e.g. Lab 1)">
+            <input type="number" id="rows${i}" placeholder="Rows">
+            <input type="number" id="cols${i}" placeholder="Columns">
+        </div>
+        `
+    }
+}
+
+// 🔥 Save to backend
+function saveDetails(){
+
+    let count = document.getElementById("roomCount").value
+    let bench = document.getElementById("bench").value
+    let msg = document.getElementById("msg")
+
+    if(count == "" || bench == ""){
+        msg.innerText = "Fill all fields ❌"
+        msg.style.color = "red"
+        return
+    }
+
+    let rooms = []
+
+    for(let i=1;i<=count;i++){
+
+        let name = document.getElementById("name"+i).value || ("Room " + i)
+        let rows = document.getElementById("rows"+i).value
+        let cols = document.getElementById("cols"+i).value
+
+        if(rows == "" || cols == ""){
+            msg.innerText = "Enter all classroom details ❌"
+            msg.style.color = "red"
+            return
+        }
+
+        rooms.push({
+            room_name: name,
+            rows: rows,
+            cols: cols
+        })
+    }
+
+    // 🔥 Send to server
+    fetch("http://localhost:3000/save-classrooms",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({bench, rooms})
+    })
+    .then(res=>res.text())
+    .then(data=>{
+        msg.innerText = data
+        msg.style.color = "green"
+    })
+    .catch(()=>{
+        msg.innerText = "Server error ❌"
+        msg.style.color = "red"
+    })
+}
+
+</script>
+
+</body>
+</html>

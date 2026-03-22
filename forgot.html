@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Forgot Password</title>
+
+<style>
+body{
+    font-family:Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+.box{
+    background:white;
+    padding:20px;
+    width:300px;
+    margin:auto;
+    margin-top:100px;
+    box-shadow:0 0 10px gray;
+}
+input{
+    width:90%;
+    padding:8px;
+    margin:6px;
+}
+button{
+    padding:8px 15px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+    margin:8px;
+}
+.error{
+    color:red;
+    font-size:12px;
+    margin:0;
+}
+#msg{
+    margin-top:10px;
+}
+#timer{
+    color:red;
+    font-size:14px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+<h2>Forgot Password</h2>
+
+<input type="email" id="email" placeholder="Enter Email" oninput="validateEmail()">
+<p id="emailErr" class="error"></p>
+
+<button id="otpBtn" onclick="sendOTP()" style="display:none;">Send OTP</button>
+
+<div id="otpSection" style="display:none;">
+    <input type="text" id="otp" placeholder="Enter OTP"><br>
+
+    <input type="password" id="newpass" placeholder="New Password" oninput="validatePassword()">
+    <p id="passErr" class="error"></p>
+
+    <p id="timer"></p>
+
+    <button id="resendBtn" onclick="resendOTP()" disabled>Resend OTP</button><br>
+    <button id="resetBtn" onclick="resetPassword()">Reset Password</button>
+</div>
+
+<p><a href="login.html">Back to Login</a></p>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+let countdown
+
+// EMAIL VALIDATION
+function validateEmail(){
+    let email = emailInput.value
+
+    if(!email.includes("@") || !email.includes(".")){
+        emailErr.innerText = "Invalid email"
+        otpBtn.style.display = "none"
+    } else {
+        emailErr.innerText = ""
+        otpBtn.style.display = "inline-block"
+    }
+}
+
+// PASSWORD VALIDATION
+function validatePassword(){
+    let pass = newpass.value
+    let passRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/
+
+    if(!passRegex.test(pass)){
+        passErr.innerText = "Min 6 chars, 1 Capital, 1 Number, 1 Symbol"
+    } else {
+        passErr.innerText = ""
+    }
+}
+
+// TIMER
+function startTimer(){
+    let timeLeft = 60
+
+    timer.innerText = "OTP expires in 60s"
+    resendBtn.disabled = true
+    resetBtn.disabled = false
+
+    clearInterval(countdown)
+
+    countdown = setInterval(()=>{
+        timeLeft--
+        timer.innerText = "OTP expires in " + timeLeft + "s"
+
+        if(timeLeft <= 0){
+            clearInterval(countdown)
+            timer.innerText = "OTP expired ❌"
+            resendBtn.disabled = false
+            resetBtn.disabled = true
+        }
+    },1000)
+}
+
+// SEND OTP
+function sendOTP(){
+
+let email = emailInput.value
+
+msg.innerText = "Sending OTP..."
+msg.style.color = "black"
+
+fetch("http://localhost:3000/forgot-otp",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({email})
+})
+.then(res=>res.text())
+.then(response=>{
+
+    msg.innerText = response
+
+    if(response.includes("OTP")){
+        msg.style.color = "green"
+        otpSection.style.display="block"
+        startTimer()
+    } else {
+        msg.style.color = "red"
+    }
+
+})
+}
+
+// RESEND OTP
+function resendOTP(){
+    sendOTP()
+}
+
+// RESET PASSWORD
+function resetPassword(){
+
+let data = {
+email: emailInput.value,
+otp: otp.value,
+newPassword: newpass.value
+}
+
+// basic check
+if(data.otp.trim() === ""){
+    msg.innerText = "Enter OTP ❌"
+    msg.style.color = "red"
+    return
+}
+
+msg.innerText = "Updating password..."
+msg.style.color = "black"
+
+fetch("http://localhost:3000/reset-password",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify(data)
+})
+.then(res=>res.text())
+.then(response=>{
+    msg.innerText = response
+
+    if(response.includes("success")){
+        msg.style.color = "green"
+    } else {
+        msg.style.color = "red"
+    }
+})
+
+}
+
+// INPUT REFERENCES
+const emailInput = document.getElementById("email")
+const otpBtn = document.getElementById("otpBtn")
+const otpSection = document.getElementById("otpSection")
+const resendBtn = document.getElementById("resendBtn")
+const resetBtn = document.getElementById("resetBtn")
+const timer = document.getElementById("timer")
+const msg = document.getElementById("msg")
+const emailErr = document.getElementById("emailErr")
+const newpass = document.getElementById("newpass")
+const passErr = document.getElementById("passErr")
+
+</script>
+
+</body>
+</html>

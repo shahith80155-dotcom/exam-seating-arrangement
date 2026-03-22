@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+<div class="dashboard-container">
+
+<h1 id="welcome">Exam Seat Allocation System</h1>
+
+<div class="menu">
+
+<a href="classroom.html">
+<button>Add Classroom Details</button>
+</a>
+
+<a href="students.html">
+<button>Upload Student List</button>
+</a>
+
+<a href="seating.html">
+<button>Generate Seating</button
+</a>
+
+<a href="view.html">
+<button>View Seating Arrangement</button>
+</a>
+<button onclick="window.location.href='history.html'">
+    View Previous Seatings
+</button>
+
+<br><br>
+
+<button onclick="openPopup()" style="background:black; color:white;">
+    Reset Full System
+</button>
+
+<div id="popup" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+">
+
+    <div style="background:white; padding:20px; border-radius:8px; text-align:center; width:300px;">
+        <h3>⚠️ Warning</h3>
+        <p>This will delete ALL data.<br>Are you sure?</p>
+
+        <button onclick="confirmReset()" style="background:red; color:white;">
+            Yes, Delete
+        </button>
+
+        <button onclick="closePopup()" style="margin-left:10px;">
+            Cancel
+        </button>
+    </div>
+
+</div>
+
+<p id="msg"></p>
+
+<button onclick="logout()" style="background:red;">Logout</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+// 🔐 Protect page (IMPORTANT)
+let user = localStorage.getItem("user")
+
+if(!user){
+    window.location.href = "login.html"
+}
+
+// 👋 Show user
+document.getElementById("welcome").innerText =
+    "Welcome " + user + " - Exam Seat Allocation System"
+function openPopup(){
+    document.getElementById("popup").style.display = "flex"
+}
+
+function closePopup(){
+    document.getElementById("popup").style.display = "none"
+}
+
+function confirmReset(){
+
+    fetch("http://localhost:3000/reset-all", {
+        method: "DELETE"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        document.getElementById("popup").style.display = "none"
+
+        let message = document.getElementById("msg")
+        message.innerText = msg
+        message.style.color = "red"
+
+        setTimeout(() => {
+            location.reload()
+        }, 1000)
+    })
+}
+// 🚪 Logout
+function logout(){
+    localStorage.removeItem("user")
+    window.location.href = "login.html"
+}
+
+</script>
+
+</body>
+</html>

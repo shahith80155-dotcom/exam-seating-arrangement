@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Student List</title>
+
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+.students-container{
+    background:white;
+    padding:20px;
+    width:350px;
+    margin:auto;
+    margin-top:60px;
+    box-shadow:0 0 10px gray;
+}
+input, select{
+    width:90%;
+    padding:8px;
+    margin:5px;
+}
+button{
+    padding:8px 15px;
+    margin:10px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+#msg{
+    font-size:14px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="students-container">
+
+<h2>Upload Student Lists</h2>
+
+<!-- REGULAR -->
+<h3>Regular Students</h3>
+
+<select id="dept" required>
+<option value="">Select Department</option>
+<option>CSE</option>
+<option>ECE</option>
+<option>IT</option>
+<option>MECH</option>
+<option>CIVIL</option>
+</select>
+
+<input type="file" id="regularFile" accept=".csv" required>
+
+<br>
+
+<label>Are there arrear students?</label>
+
+<select onchange="showArrear(this.value)">
+<option value="no">No</option>
+<option value="yes">Yes</option>
+</select>
+
+<div id="arrearSection" style="display:none;">
+
+<h3>Arrear Students</h3>
+
+<select id="arrearDept">
+<option value="">Select Department</option>
+<option>CSE</option>
+<option>ECE</option>
+<option>IT</option>
+<option>CIVIL</option>
+<option>MECH</option>
+</select>
+
+<input type="file" id="arrearFile" accept=".csv">
+
+</div>
+
+<button onclick="uploadStudents()">Upload Students</button>
+
+<p id="msg"></p>
+<button onclick="deleteAllStudents()" 
+    style="background:red; color:white;">
+    Delete All Students
+</button>
+
+<p id="msg"></p>
+
+<a href="dashboard.html">Back to Dashboard</a>
+
+</div>
+
+<script>
+
+// 🔐 protect page
+let user = localStorage.getItem("user")
+if(!user){
+    window.location.href = "login.html"
+}
+function deleteAllStudents(){
+
+    fetch("http://localhost:3000/delete-all-students", {
+        method: "DELETE"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        document.getElementById("msg").innerText = msg
+
+        setTimeout(() => {
+            location.reload()
+        }, 1000)
+    })
+}
+function showArrear(value){
+    document.getElementById("arrearSection").style.display =
+        (value === "yes") ? "block" : "none"
+}
+
+// 🔥 UPLOAD FUNCTION
+function uploadStudents(){
+
+let dept = document.getElementById("dept").value
+let file = document.getElementById("regularFile").files[0]
+let arrearFile = document.getElementById("arrearFile").files[0]
+let arrearDept = document.getElementById("arrearDept").value
+let msg = document.getElementById("msg")
+
+if(dept === "" || !file){
+    msg.innerText = "Select department & file ❌"
+    msg.style.color = "red"
+    return
+}
+
+let formData = new FormData()
+formData.append("dept", dept)
+formData.append("regularFile", file)
+
+if(arrearFile){
+    formData.append("arrearFile", arrearFile)
+    formData.append("arrearDept", arrearDept)
+}
+
+// 🔥 SEND TO SERVER
+fetch("http://localhost:3000/upload-students",{
+    method:"POST",
+    body: formData
+})
+.then(res=>res.text())
+.then(data=>{
+    msg.innerText = data
+    msg.style.color = "green"
+})
+.catch(()=>{
+    msg.innerText = "Upload failed ❌"
+    msg.style.color = "red"
+})
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+
+<style>
+body{
+    text-align:center;
+    font-family:Arial;
+    background:#f4f4f4;
+}
+.box{
+    background:white;
+    padding:20px;
+    width:300px;
+    margin:auto;
+    margin-top:100px;
+    box-shadow:0 0 10px gray;
+}
+input{
+    width:90%;
+    padding:8px;
+    margin:8px;
+}
+button{
+    padding:8px 15px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+#msg{
+    margin-top:10px;
+    font-size:14px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+<h2>Login</h2>
+
+<input type="text" id="username" placeholder="Username or Email" oninput="clearMsg()"><br>
+<input type="password" id="password" placeholder="Password" oninput="clearMsg()"><br>
+
+<button onclick="login()">Login</button>
+
+<p><a href="forgot.html">Forgot Password?</a></p>
+<p><a href="register.html">Create Account</a></p>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+function clearMsg(){
+    document.getElementById("msg").innerText = ""
+}
+
+// LOGIN FUNCTION
+function login(){
+
+let username = document.getElementById("username").value
+let password = document.getElementById("password").value
+let msgBox = document.getElementById("msg")
+
+// 🔴 Empty validation
+if(username.trim() === "" || password.trim() === ""){
+    msgBox.innerText = "All fields are required ❌"
+    msgBox.style.color = "red"
+    return
+}
+
+// 🔄 Loading
+msgBox.innerText = "Checking..."
+msgBox.style.color = "black"
+
+fetch("http://localhost:3000/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({username, password})
+})
+.then(res=>res.json())
+.then(data=>{
+
+    msgBox.innerText = data.msg
+
+    if(data.success){
+        msgBox.style.color = "green"
+
+        // ✅ STORE USER
+        localStorage.setItem("user", username)
+
+        // ✅ REDIRECT
+        setTimeout(()=>{
+            window.location.href = "dashboard.html"
+        }, 1000)
+
+    } else {
+        msgBox.style.color = "red"
+    }
+
+})
+.catch(()=>{
+    msgBox.innerText = "Server error ❌"
+    msgBox.style.color = "red"
+})
+
+}
+
+</script>
+
+</body>
+</html>

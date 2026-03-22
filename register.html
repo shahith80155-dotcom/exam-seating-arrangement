@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register</title>
+
+<style>
+body{
+    font-family: Arial;
+    text-align:center;
+    background:#f4f4f4;
+}
+.box{
+    background:white;
+    padding:20px;
+    width:300px;
+    margin:auto;
+    margin-top:80px;
+    box-shadow:0 0 10px gray;
+}
+input{
+    width:90%;
+    padding:8px;
+    margin:5px;
+}
+.error{
+    color:red;
+    font-size:12px;
+    margin:0;
+}
+.success{
+    color:green;
+    font-size:13px;
+}
+button{
+    padding:8px 15px;
+    margin:10px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+#timer{
+    color:red;
+    font-size:14px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+<h2>Register</h2>
+
+<input type="text" id="fname" placeholder="First Name" oninput="validateForm()">
+<p id="fnameErr" class="error"></p>
+
+<input type="text" id="lname" placeholder="Last Name" oninput="validateForm()">
+<p id="lnameErr" class="error"></p>
+
+<input type="email" id="email" placeholder="Email" oninput="validateForm()">
+<p id="emailErr" class="error"></p>
+
+<input type="date" id="dob" oninput="validateForm()">
+<p id="dobErr" class="error"></p>
+
+<input type="text" id="username" placeholder="Username" oninput="validateForm()">
+<p id="userErr" class="error"></p>
+
+<input type="password" id="password" placeholder="Password" oninput="validateForm()">
+<p id="passErr" class="error"></p>
+
+<input type="password" id="confirmPassword" placeholder="Confirm Password" oninput="validateForm()">
+<p id="confirmErr" class="error"></p>
+
+<button id="otpBtn" onclick="sendOTP()" style="display:none;">Send OTP</button>
+
+<div id="otpSection" style="display:none;">
+    <input type="text" id="otp" placeholder="Enter OTP"><br>
+    <p id="timer"></p>
+
+    <button id="resendBtn" onclick="resendOTP()" disabled>Resend OTP</button><br>
+    <button id="registerBtn" onclick="register()">Verify & Register</button>
+</div>
+
+<p><a href="login.html">Back to Login</a></p>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+let countdown
+
+function validateForm(){
+
+let fname = fnameInput.value
+let lname = lnameInput.value
+let email = emailInput.value
+let dob = dobInput.value
+let password = passwordInput.value
+let confirm = confirmInput.value
+
+let valid = true
+
+let nameRegex = /^[A-Za-z]+$/
+let passRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/
+
+// FIRST NAME
+if(!nameRegex.test(fname)){
+    fnameErr.innerText = "Only letters allowed"
+    valid = false
+}else{
+    fnameErr.innerText = ""
+}
+
+// LAST NAME
+if(!nameRegex.test(lname)){
+    lnameErr.innerText = "Only letters allowed"
+    valid = false
+}else{
+    lnameErr.innerText = ""
+}
+
+// EMAIL
+if(!email.includes("@") || !email.includes(".")){
+    emailErr.innerText = "Invalid email"
+    valid = false
+}else{
+    emailErr.innerText = ""
+}
+
+// DOB
+if(dob){
+    let today = new Date()
+    let userDOB = new Date(dob)
+
+    if(userDOB > today){
+        dobErr.innerText = "Invalid DOB"
+        valid = false
+    }else{
+        dobErr.innerText = ""
+    }
+}
+
+// PASSWORD
+if(!passRegex.test(password)){
+    passErr.innerText = "Min 6 chars, 1 Capital, 1 Number, 1 Symbol"
+    valid = false
+}else{
+    passErr.innerText = ""
+}
+
+// CONFIRM PASSWORD
+if(password !== confirm){
+    confirmErr.innerText = "Passwords not matching"
+    valid = false
+}else{
+    confirmErr.innerText = ""
+}
+
+// SHOW OTP BUTTON
+otpBtn.style.display = valid ? "inline-block" : "none"
+
+}
+
+// TIMER
+function startTimer(){
+
+let timeLeft = 60
+
+timer.innerText = "OTP expires in 60s"
+registerBtn.disabled = false
+resendBtn.disabled = true
+
+clearInterval(countdown)
+
+countdown = setInterval(() => {
+
+    timeLeft--
+
+    timer.innerText = "OTP expires in " + timeLeft + "s"
+
+    if(timeLeft <= 0){
+        clearInterval(countdown)
+        timer.innerText = "OTP expired ❌"
+        registerBtn.disabled = true
+        resendBtn.disabled = false
+    }
+
+}, 1000)
+
+}
+
+// SEND OTP
+function sendOTP(){
+
+let email = emailInput.value
+msg.innerText = "Sending OTP..."
+msg.style.color = "black"
+
+fetch("http://localhost:3000/send-otp",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({email})
+})
+.then(res=>res.text())
+.then(response=>{
+
+    msg.innerText = response
+
+    if(response.includes("OTP")){
+        msg.style.color = "green"
+        otpSection.style.display="block"
+        startTimer()
+    } else {
+        msg.style.color = "red"
+    }
+})
+
+}
+
+// RESEND OTP
+function resendOTP(){
+
+sendOTP()
+
+}
+
+// REGISTER
+function register(){
+
+let otpVal = otp.value
+
+if(otpVal.trim() === ""){
+    msg.innerText = "Enter OTP ❌"
+    msg.style.color = "red"
+    return
+}
+
+let data = {
+fname: fnameInput.value,
+lname: lnameInput.value,
+email: emailInput.value,
+dob: dobInput.value,
+username: usernameInput.value,
+password: passwordInput.value,
+otp: otpVal
+}
+
+msg.innerText = "Registering..."
+msg.style.color = "black"
+
+fetch("http://localhost:3000/register",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify(data)
+})
+.then(res=>res.text())
+.then(response=>{
+    msg.innerText = response
+
+    if(response.includes("success")){
+        msg.style.color = "green"
+    } else {
+        msg.style.color = "red"
+    }
+})
+
+}
+
+// INPUT REFERENCES
+const fnameInput = document.getElementById("fname")
+const lnameInput = document.getElementById("lname")
+const emailInput = document.getElementById("email")
+const dobInput = document.getElementById("dob")
+const usernameInput = document.getElementById("username")
+const passwordInput = document.getElementById("password")
+const confirmInput = document.getElementById("confirmPassword")
+
+const fnameErr = document.getElementById("fnameErr")
+const lnameErr = document.getElementById("lnameErr")
+const emailErr = document.getElementById("emailErr")
+const dobErr = document.getElementById("dobErr")
+const userErr = document.getElementById("userErr")
+const passErr = document.getElementById("passErr")
+const confirmErr = document.getElementById("confirmErr")
+
+const otpBtn = document.getElementById("otpBtn")
+const otpSection = document.getElementById("otpSection")
+const timer = document.getElementById("timer")
+const resendBtn = document.getElementById("resendBtn")
+const registerBtn = document.getElementById("registerBtn")
+const msg = document.getElementById("msg")
+
+</script>
+
+</body>
+</html>

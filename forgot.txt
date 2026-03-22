@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Forgot Password</title>
+</head>
+
+<body style="text-align:center; font-family:Arial;">
+
+<h2>Forgot Password</h2>
+
+<input type="email" id="email" placeholder="Enter Email"><br><br>
+
+<button onclick="sendOTP()">Send OTP</button>
+
+<div id="otpSection" style="display:none;">
+    <input type="text" id="otp" placeholder="Enter OTP"><br><br>
+    <input type="password" id="newpass" placeholder="New Password"><br><br>
+    <button onclick="resetPassword()">Reset Password</button>
+</div>
+
+<script>
+
+// SEND OTP
+function sendOTP(){
+
+let email = document.getElementById("email").value
+
+if(email.trim() === ""){
+    alert("Enter email ❌")
+    return
+}
+
+fetch("http://localhost:3000/forgot-otp",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({email})
+})
+.then(res=>res.text())
+.then(msg=>{
+    alert(msg)
+
+    if(msg.includes("OTP sent")){
+        document.getElementById("otpSection").style.display="block"
+    }
+})
+
+}
+
+// RESET PASSWORD
+function resetPassword(){
+
+let data = {
+email: document.getElementById("email").value,
+otp: document.getElementById("otp").value,
+newPassword: document.getElementById("newpass").value
+}
+
+fetch("http://localhost:3000/reset-password",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify(data)
+})
+.then(res=>res.text())
+.then(msg=>{
+    alert(msg)
+})
+
+}
+
+</script>
+
+</body>
+</html>

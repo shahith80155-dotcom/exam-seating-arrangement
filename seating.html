@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Seating</title>
+</head>
+<body>
+
+<h2>Generate Seating</h2>
+
+<label>
+  <input type="checkbox" id="extraRoom">
+  Create Extra Room
+</label>
+
+<div id="extraInputs" style="display:none; margin-top:10px;">
+  <label>Rows:</label>
+  <input type="number" id="extraRows">
+
+  <label>Columns:</label>
+  <input type="number" id="extraCols">
+
+  <label>Bench:</label>
+  <input type="number" id="extraBench" value="1">
+</div>
+
+<br><br>
+
+<button onclick="generateSeating()">Generate Seating</button>
+
+<script>
+
+// ✅ SHOW / HIDE INPUTS
+document.getElementById("extraRoom").addEventListener("change", function() {
+
+    let box = document.getElementById("extraInputs")
+    let disabled = !this.checked
+
+    box.style.display = this.checked ? "block" : "none"
+
+    document.getElementById("extraRows").disabled = disabled
+    document.getElementById("extraCols").disabled = disabled
+    document.getElementById("extraBench").disabled = disabled
+})
+
+
+// ✅ GENERATE FUNCTION
+function generateSeating() {
+
+    let allowExtra = document.getElementById("extraRoom").checked
+
+    let url = "http://localhost:3000/generate-seating?extra=" + allowExtra
+
+    // ✅ only send extra data if checked
+    if(allowExtra){
+
+        let rows = document.getElementById("extraRows").value
+        let cols = document.getElementById("extraCols").value
+        let bench = document.getElementById("extraBench").value || 1
+
+        if(!rows || !cols){
+            alert("Please enter rows and columns ❌")
+            return
+        }
+
+        url += `&rows=${rows}&cols=${cols}&bench=${bench}`
+    }
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("DATA:", data)
+
+        localStorage.clear()
+        localStorage.setItem("seating", JSON.stringify(data))
+
+        window.location.href = "view.html"
+    })
+}
+
+</script>
+
+</body>
+</html>

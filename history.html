@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Previous Seatings</title>
+</head>
+<body>
+
+<h1>Previous Seatings</h1>
+<p id="msg" style="font-weight:bold;"></p>
+<div id="list"></div>
+
+<script>
+
+fetch("http://localhost:3000/seating-history")
+.then(res => res.json())
+.then(data => {
+
+    let container = document.getElementById("list")
+
+    data.forEach(item => {
+
+        let div = document.createElement("div")
+        div.style.border = "1px solid black"
+        div.style.margin = "10px"
+        div.style.padding = "10px"
+
+        div.innerHTML = `
+            <h3>ID: ${item.id}</h3>
+            <p>Unseated: ${item.unseated.length}</p>
+            <p>Date: ${new Date(item.created_at).toLocaleString()}</p>
+
+            <button onclick='viewSeating(${JSON.stringify(item)})'>
+                View
+            </button>
+
+            <button onclick="deleteHistory(${item.id})" 
+                style="background:red; color:white;">
+                Delete
+            </button>
+        `
+
+        container.appendChild(div)
+    })
+})
+
+// ✅ VIEW FUNCTION
+function viewSeating(data){
+    localStorage.setItem("seating", JSON.stringify(data))
+    window.location.href = "view.html"
+}
+
+// ✅ DELETE FUNCTION
+function deleteHistory(id){
+
+    fetch(`http://localhost:3000/delete-history/${id}`, {
+        method: "DELETE"
+    })
+    .then(res => res.text())
+    .then(msg => {
+
+        let message = document.getElementById("msg")
+        message.innerText = msg
+        message.style.color = "red"
+
+        setTimeout(() => {
+            location.reload()
+        }, 1000)
+    })
+}
+
+</script>
+
+</body>
+</html>
