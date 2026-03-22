@@ -106,7 +106,7 @@ if(!user){
 }
 function deleteAllStudents(){
 
-    fetch("http://localhost:3000/delete-all-students", {
+    fetch("https://exam-seating-arrangement-k7ln.onrender.com/delete-all-students", {
         method: "DELETE"
     })
     .then(res => res.text())
@@ -149,7 +149,7 @@ if(arrearFile){
 }
 
 // 🔥 SEND TO SERVER
-fetch("http://localhost:3000/upload-students",{
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/upload-students",{
     method:"POST",
     body: formData
 })

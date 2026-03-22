@@ -78,7 +78,7 @@ if(username.trim() === "" || password.trim() === ""){
 msgBox.innerText = "Checking..."
 msgBox.style.color = "black"
 
-fetch("http://localhost:3000/login",{
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/login",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body: JSON.stringify({username, password})

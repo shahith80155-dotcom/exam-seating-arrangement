@@ -66,14 +66,18 @@ app.post("/send-otp", (req, res) => {
         }
 
         transporter.sendMail({
-            from: "tempmail111356@gmail.com",
-            to: email,
-            subject: "OTP",
-            text: "Your OTP: " + otp
-        }, (err)=>{
-            if(err) return res.send("Error sending OTP ❌")
-            res.send("OTP sent ✅")
-        })
+    from: "tempmail111356@gmail.com",
+    to: email,
+    subject: "OTP",
+    text: "Your OTP: " + otp
+}, (err, info)=>{
+    if(err){
+        console.log("MAIL ERROR:", err)   // 👈 VERY IMPORTANT
+        return res.send("Error sending OTP ❌")
+    }
+    console.log("MAIL SENT:", info.response)  // 👈 ADD THIS
+    res.send("OTP sent ✅")
+})
 
     })
 })
