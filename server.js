@@ -11,7 +11,9 @@ const upload = multer({ dest: "uploads/" })
 const app = express()
 app.use(cors())
 app.use(express.json())
-
+app.get("/", (req, res) => {
+    res.send("API Running ✅")
+})
 // DB
 const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
