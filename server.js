@@ -2,12 +2,9 @@ require("dotenv").config()
 const express = require("express")
 const mysql = require("mysql2")
 const cors = require("cors")
-const { Resend } = require("resend")
-const resend = new Resend(process.env.RESEND_API_KEY)
 const multer = require("multer")
 const csv = require("csv-parser")
 const fs = require("fs")
-let otpStore = {}
 const upload = multer({ dest: "uploads/" })
 const app = express()
 app.use(cors())
@@ -75,173 +72,12 @@ db.connect(err => {
 // MAIL
 
 /* ================= OTP SEND ================= */
-app.post("/send-otp", async (req, res) => {
-
-    let { email } = req.body
-    let otp = Math.floor(100000 + Math.random()*900000)
-
-    // ✅ STORE OTP HERE
-    otpStore[email] = {
-        otp,
-        time: Date.now()
-    }
-
-    try {
-        await resend.emails.send({
-            from: "onboarding@resend.dev",
-            to: email,
-            subject: "OTP Verification",
-            text: `Your OTP is: ${otp}`
-        })
-
-        res.send("OTP sent ✅")
-
-    } catch (err) {
-        console.log("MAIL ERROR:", err)
-        res.send("Error sending OTP ❌")
-    }
-})
 
 /* ================= REGISTER ================= */
-app.post("/register", (req, res) => {
-
-    let { fname, lname, email, dob, username, password, otp } = req.body
-
-    // ✅ Check OTP exists
-    if (!otpStore[email]) {
-        return res.send("OTP not found ❌")
-    }
-
-    // ✅ Check expiry (1 min)
-    if (Date.now() - otpStore[email].time > 60000) {
-        delete otpStore[email]
-        return res.send("OTP expired ⏱️")
-    }
-
-    // ✅ Check OTP match
-    if (otpStore[email].otp != otp) {
-        return res.send("Invalid OTP ❌")
-    }
-
-    // ✅ Check user exists
-    let check = "SELECT * FROM users WHERE username=?"
-
-    db.query(check, [username], (err, result) => {
-
-        if (err) {
-            return res.send("Server error ❌")
-        }
-
-        if (result.length > 0) {
-            return res.send("User exists ❌")
-        }
-
-        // ✅ Insert user
-        let sql = `INSERT INTO users (fname,lname,email,dob,username,password)
-                   VALUES (?,?,?,?,?,?)`
-
-        db.query(sql, [fname, lname, email, dob, username, password], (err) => {
-
-            if (err) {
-                return res.send("Error saving user ❌")
-            }
-
-            // ✅ Clear OTP after success
-            delete otpStore[email]
-
-            res.send("Registered successfully ✅")
-        })
-    })
-})
-/* ================= LOGIN ================= */
-app.post("/login", (req, res) => {
-
-    let { username, password } = req.body
-
-    let sql = "SELECT * FROM users WHERE (username=? OR email=?) AND password=?"
-
-db.query(sql, [username, username, password], (err, result) => {
-
-        if(err){
-            return res.json({success:false, msg:"Server error ❌"})
-        }
-
-        if(result.length > 0){
-            res.json({success:true, msg:"Login success ✅"})
-        }else{
-            res.json({success:false, msg:"Invalid user or password ❌"})
-        }
-    })
-})
 
 /* ================= FORGOT OTP ================= */
-app.post("/forgot-otp", async (req, res) => {
-
-    let { email } = req.body
-
-    let check = "SELECT * FROM users WHERE email=?"
-
-    db.query(check, [email], async (err, result) => {
-
-        if(err) return res.send("Server error ❌")
-
-        if(result.length === 0){
-            return res.send("Email not found ❌")
-        }
-
-        let otp = Math.floor(100000 + Math.random()*900000)
-
-        otpStore[email] = {
-            otp,
-            time: Date.now()
-        }
-
-        try {
-            await resend.emails.send({
-                from: "onboarding@resend.dev",
-                to: email,
-                subject: "Reset OTP",
-                text: `Your OTP is: ${otp}`
-            })
-
-            res.send("OTP sent ✅")
-
-        } catch (err) {
-            console.log("MAIL ERROR:", err)
-            res.send("Error sending OTP ❌")
-        }
-
-    })
-})
 
 /* ================= RESET PASSWORD ================= */
-app.post("/reset-password", (req,res)=>{
-
-    let { email, otp, newPassword } = req.body
-
-    if(!otpStore[email]){
-        return res.send("OTP not found ❌")
-    }
-
-    if(Date.now() - otpStore[email].time > 60000){
-        delete otpStore[email]
-        return res.send("OTP expired ❌")
-    }
-
-    if(otpStore[email].otp != otp){
-        return res.send("Invalid OTP ❌")
-    }
-
-    let sql = "UPDATE users SET password=? WHERE email=?"
-
-    db.query(sql, [newPassword,email], err=>{
-        if(err) throw err
-
-        delete otpStore[email]
-
-        res.send("Password updated ✅")
-    })
-})
 
 app.post("/save-classrooms", (req, res) => {
 
