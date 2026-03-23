@@ -73,11 +73,14 @@ db.connect(err => {
 })
 // MAIL
 const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: "shahith80155@gmail.com",
-        pass: "bmjnchknztjjnrre"
-    }
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4, // ✅ FORCE IPv4 (VERY IMPORTANT)
+  auth: {
+    user: "shahith80155@gmail.com",
+    pass: "ghbpnkhkgfducotv"
+  }
 })
 
 let otpStore = {}
