@@ -73,13 +73,13 @@ db.connect(err => {
 })
 // MAIL
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4, // ✅ FORCE IPv4 (VERY IMPORTANT)
+  service: "gmail",
   auth: {
     user: "shahith80155@gmail.com",
     pass: "ghbpnkhkgfducotv"
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 })
 
