@@ -357,8 +357,8 @@ app.get("/generate-seating", (req, res) => {
             // ================= MAIN ROOMS =================
             rooms.forEach(room => {
 
-                let grid = Array.from({ length: room.rows }, () =>
-                    Array.from({ length: room.cols }, () =>
+                let grid = Array.from({ length: room.row_count }, () =>
+                    Array.from({ length: room.col_count }, () =>
                         Array(room.bench || 1).fill(null)
                     )
                 )
