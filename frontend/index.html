@@ -1,105 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
-    <link rel="stylesheet" href="style.css">
+<title>Login</title>
+
+<style>
+body{
+    text-align:center;
+    font-family:Arial;
+    background:#f4f4f4;
+}
+.box{
+    background:white;
+    padding:20px;
+    width:300px;
+    margin:auto;
+    margin-top:100px;
+    box-shadow:0 0 10px gray;
+}
+input{
+    width:90%;
+    padding:8px;
+    margin:8px;
+}
+button{
+    padding:8px 15px;
+    background:green;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+#msg{
+    margin-top:10px;
+    font-size:14px;
+}
+</style>
+
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
+<h2>Login</h2>
 
-    <!-- LEFT SIDE -->
-    <div class="left">
-        <h1>Welcome</h1>
-        <p>In this universe, every seat finds its place.</p>
-    </div>
+<input type="text" id="username" placeholder="Username or Email" oninput="clearMsg()"><br>
+<input type="password" id="password" placeholder="Password" oninput="clearMsg()"><br>
 
-    <!-- RIGHT SIDE -->
-    <div class="right">
-        <div class="box">
+<button onclick="login()">Login</button>
 
-            <h2>Login</h2>
+<p><a href="forgot.html">Forgot Password?</a></p>
+<p><a href="register.html">Create Account</a></p>
 
-            <div class="input-group">
-                <span>👤</span>
-                <input type="text" id="username" placeholder="Email" oninput="clearMsg()">
-            </div>
-
-            <div class="input-group">
-                <span>🔒</span>
-                <input type="password" id="password" placeholder="Password" oninput="clearMsg()">
-            </div>
-
-            <button onclick="login()">Login</button>
-
-            <div class="actions">
-                <span onclick="window.location.href='forgot.html'">Forgot Password</span>
-                <span onclick="window.location.href='register.html'">Create Account</span>
-            </div>
-
-            <p id="msg"></p>
-
-        </div>
-    </div>
+<p id="msg"></p>
 
 </div>
 
 <script>
+
 function clearMsg(){
     document.getElementById("msg").innerText = ""
 }
-</script>
 
-<!-- 🔥 FIREBASE LOGIN -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// LOGIN FUNCTION
+function login(){
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAecbhpVI_RswN56YnpqFsXRCnlgd7jHp4",
-  authDomain: "exam-seat-system-f2416.firebaseapp.com",
-  projectId: "exam-seat-system-f2416",
-  storageBucket: "exam-seat-system-f2416.firebasestorage.app",
-  messagingSenderId: "727460801338",
-  appId: "1:727460801338:web:f4fef4ceb2efdbe814fe03"
-};
+let username = document.getElementById("username").value
+let password = document.getElementById("password").value
+let msgBox = document.getElementById("msg")
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// ✅ LOGIN FUNCTION
-window.login = function(){
-
-let email = document.getElementById("username").value;
-let password = document.getElementById("password").value;
-let msgBox = document.getElementById("msg");
-
-if(email.trim() === "" || password.trim() === ""){
-    msgBox.innerText = "All fields required ❌";
-    msgBox.style.color = "red";
-    return;
+// 🔴 Empty validation
+if(username.trim() === "" || password.trim() === ""){
+    msgBox.innerText = "All fields are required ❌"
+    msgBox.style.color = "red"
+    return
 }
 
-msgBox.innerText = "Checking...";
+// 🔄 Loading
+msgBox.innerText = "Checking..."
+msgBox.style.color = "black"
 
-signInWithEmailAndPassword(auth, email, password)
-.then(() => {
+fetch("https://exam-seating-arrangement-k7ln.onrender.com/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({username, password})
+})
+.then(res=>res.json())
+.then(data=>{
 
-    msgBox.innerText = "Login successful ✅";
-    msgBox.style.color = "#00ffcc";
+    msgBox.innerText = data.msg
 
-    localStorage.setItem("user", email);
+    if(data.success){
+        msgBox.style.color = "green"
 
-    setTimeout(()=>{
-        window.location.href = "dashboard.html";
-    },1000);
+        // ✅ STORE USER
+        localStorage.setItem("user", username)
+
+        // ✅ REDIRECT
+        setTimeout(()=>{
+            window.location.href = "dashboard.html"
+        }, 1000)
+
+    } else {
+        msgBox.style.color = "red"
+    }
 
 })
-.catch((error) => {
-    msgBox.innerText = error.message;
-    msgBox.style.color = "red";
-});
+.catch(()=>{
+    msgBox.innerText = "Server error ❌"
+    msgBox.style.color = "red"
+})
 
 }
 
