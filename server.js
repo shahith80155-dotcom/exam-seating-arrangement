@@ -53,15 +53,15 @@ db.connect(err => {
     `)
 
     db.query(`
-        CREATE TABLE IF NOT EXISTS classrooms (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  room_name VARCHAR(50),
-  row_count INT,
-  col_count INT,
-  bench INT
-  )
-        
-    `)
+    CREATE TABLE IF NOT EXISTS classrooms (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        room_name VARCHAR(50),
+        row_count INT,
+        col_count INT,
+        bench INT,
+        allowed_depts TEXT   -- 👈 ADD THIS
+    )
+`)
 
     db.query(`
         CREATE TABLE IF NOT EXISTS seating_history (
@@ -252,20 +252,21 @@ app.post("/save-classrooms", (req, res) => {
     rooms.forEach(room => {
 
         let sql = `
-        INSERT INTO classrooms (room_name, row_count, col_count, bench)
-        VALUES (?,?,?,?)`
+        INSERT INTO classrooms 
+        (room_name, row_count, col_count, bench, allowed_depts)
+        VALUES (?,?,?,?,?)`
 
         db.query(sql, [
             room.room_name,
             room.row_count,
             room.col_count,
-            bench
+            bench,
+            JSON.stringify(room.allowed_depts) // ✅ IMPORTANT
         ])
     })
 
     res.send("Classroom details saved ✅")
 })
-
 
 app.post("/upload-students", upload.fields([
     { name: "regularFile" },
@@ -345,13 +346,17 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // shuffle
+            // shuffle students
             students.sort(() => Math.random() - 0.5)
 
             let allRooms = []
 
             // ================= MAIN ROOMS =================
             rooms.forEach(room => {
+
+                let allowed = room.allowed_depts
+                    ? JSON.parse(room.allowed_depts)
+                    : []
 
                 let grid = Array.from({ length: room.row_count }, () =>
                     Array.from({ length: room.col_count }, () =>
@@ -361,13 +366,18 @@ app.get("/generate-seating", (req, res) => {
 
                 for(let r=0; r<room.row_count; r++){
                     for(let c=0; c<room.col_count; c++){
-                        for(let b=0; b<(room.bench||1); b++){
+                        for(let b=0; b<(room.bench || 1); b++){
 
                             let placed = false
 
-                            // ✅ STRICT (dept + subject)
+                            // ✅ STRICT (dept + subject + allowed dept)
                             for(let i=0; i<students.length; i++){
                                 let s = students[i]
+
+                                // 🔥 NEW FILTER
+                                if(allowed.length > 0 && !allowed.includes(s.dept)){
+                                    continue
+                                }
 
                                 if(isValid(s, r, c, grid)){
                                     placeStudent(grid, r, c, b, s)
@@ -377,10 +387,15 @@ app.get("/generate-seating", (req, res) => {
                                 }
                             }
 
-                            // ✅ RELAXED (only subject)
+                            // ✅ RELAXED (only subject + allowed dept)
                             if(!placed){
                                 for(let i=0; i<students.length; i++){
                                     let s = students[i]
+
+                                    // 🔥 NEW FILTER
+                                    if(allowed.length > 0 && !allowed.includes(s.dept)){
+                                        continue
+                                    }
 
                                     if(isRelaxedValid(s, r, c, grid)){
                                         placeStudent(grid, r, c, b, s)
@@ -396,7 +411,8 @@ app.get("/generate-seating", (req, res) => {
 
                 allRooms.push({
                     room: room.room_name,
-                    layout: grid
+                    layout: grid,
+                    allowed_depts: allowed
                 })
             })
 
@@ -440,6 +456,7 @@ app.get("/generate-seating", (req, res) => {
             // ================= FORMAT OUTPUT =================
             let clean = allRooms.map(room => ({
                 room: room.room,
+                allowed_depts: room.allowed_depts || [],
                 layout: room.layout.map(row =>
                     row.map(col =>
                         col.map(s =>
@@ -451,49 +468,44 @@ app.get("/generate-seating", (req, res) => {
                 )
             }))
 
-            // ================= ROOM DEPT LIST =================
             let roomDeptList = allRooms.map(room => {
-                let deptMap = {}
+    let deptMap = {}
 
-                room.layout.forEach(row => {
-                    row.forEach(col => {
-                        col.forEach(s => {
-                            if(!s) return
+    room.layout.forEach(row => {
+        row.forEach(col => {
+            col.forEach(s => {
+                if(!s) return
 
-                            if(!deptMap[s.dept]){
-                                deptMap[s.dept] = []
-                            }
-
-                            deptMap[s.dept].push(
-                                `${s.name} (${s.regno} - ${s.subject})`
-                            )
-                        })
-                    })
-                })
-
-                return {
-                    room: room.room,
-                    departments: deptMap
+                if(!deptMap[s.dept]){
+                    deptMap[s.dept] = []
                 }
+
+                deptMap[s.dept].push(
+                    `${s.name} (${s.regno} - ${s.subject})`
+                )
             })
+        })
+    })
 
+    return {
+        room: room.room,
+        departments: deptMap
+    }
+})
             // ================= FINAL RESULT =================
-            let result = {
-                seating: clean,
-                unseated: students.map(s =>
-                    `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
-                ),
-                roomDeptList: roomDeptList,
-                created_at: new Date()
-            }
+           let result = {
+    seating: clean,
+    unseated: students.map(s =>
+        `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
+    ),
+    roomDeptList, // ✅ ADD THIS
+    created_at: new Date()
+}
 
-            // ================= SAVE HISTORY =================
+            // SAVE HISTORY
             db.query(
                 "INSERT INTO seating_history (data) VALUES (?)",
-                [JSON.stringify(result)],
-                err => {
-                    if(err) console.log("History error:", err)
-                }
+                [JSON.stringify(result)]
             )
 
             res.json(result)

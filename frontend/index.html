@@ -1,56 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login</title>
-
-<style>
-body{
-    text-align:center;
-    font-family:Arial;
-    background:#f4f4f4;
-}
-.box{
-    background:white;
-    padding:20px;
-    width:300px;
-    margin:auto;
-    margin-top:100px;
-    box-shadow:0 0 10px gray;
-}
-input{
-    width:90%;
-    padding:8px;
-    margin:8px;
-}
-button{
-    padding:8px 15px;
-    background:green;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-#msg{
-    margin-top:10px;
-    font-size:14px;
-}
-</style>
-
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="container">
 
-<div class="box">
-<h2>Login</h2>
+    <!-- LEFT SIDE -->
+    <div class="left">
+        <h1>Welcome</h1>
+        <p>Aligning minds like stars — perfectly placed, perfectly planned.</p>
+    </div>
 
-<input type="text" id="username" placeholder="Username or Email" oninput="clearMsg()"><br>
-<input type="password" id="password" placeholder="Password" oninput="clearMsg()"><br>
+    <!-- RIGHT SIDE -->
+    <div class="right">
+        <div class="box">
 
-<button onclick="login()">Login</button>
+            <h2>Login</h2>
 
-<p><a href="forgot.html">Forgot Password?</a></p>
-<p><a href="register.html">Create Account</a></p>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Username or Email" oninput="clearMsg()">
+            </div>
 
-<p id="msg"></p>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Password" oninput="clearMsg()">
+            </div>
+
+            <button onclick="login()">Login</button>
+
+            <div class="links">
+                <span onclick="goForgot()">Forgot Password</span>
+                <span onclick="goRegister()">Create Account</span>
+            </div>
+
+            <p id="msg"></p>
+
+        </div>
+    </div>
 
 </div>
 
@@ -60,23 +51,28 @@ function clearMsg(){
     document.getElementById("msg").innerText = ""
 }
 
-// LOGIN FUNCTION
+function goForgot(){
+    window.location.href = "forgot.html"
+}
+
+function goRegister(){
+    window.location.href = "register.html"
+}
+
 function login(){
 
 let username = document.getElementById("username").value
 let password = document.getElementById("password").value
 let msgBox = document.getElementById("msg")
 
-// 🔴 Empty validation
 if(username.trim() === "" || password.trim() === ""){
     msgBox.innerText = "All fields are required ❌"
     msgBox.style.color = "red"
     return
 }
 
-// 🔄 Loading
 msgBox.innerText = "Checking..."
-msgBox.style.color = "black"
+msgBox.style.color = "white"
 
 fetch("https://exam-seating-arrangement-k7ln.onrender.com/login",{
 method:"POST",
@@ -89,12 +85,10 @@ body: JSON.stringify({username, password})
     msgBox.innerText = data.msg
 
     if(data.success){
-        msgBox.style.color = "green"
+        msgBox.style.color = "lightgreen"
 
-        // ✅ STORE USER
         localStorage.setItem("user", username)
 
-        // ✅ REDIRECT
         setTimeout(()=>{
             window.location.href = "dashboard.html"
         }, 1000)

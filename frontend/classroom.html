@@ -58,6 +58,16 @@ button{
 <input type="number" id="bench" placeholder="Students per bench">
 
 <br>
+<label>
+    <input type="radio" name="mode" value="normal" checked>
+    Normal Allocation
+</label>
+
+<label>
+    <input type="radio" name="mode" value="dept">
+    Department-wise Allocation
+</label>
+
 
 <button onclick="generateRooms()">Create Classroom Fields</button>
 
@@ -96,11 +106,26 @@ function deleteAllClassrooms(){
         }, 1000)
     })
 }
+document.querySelectorAll("input[name='mode']").forEach(radio => {
+    radio.addEventListener("change", () => {
+
+        let mode = document.querySelector("input[name='mode']:checked").value
+
+        if(mode === "dept"){
+            document.getElementById("deptSection").style.display = "block"
+        } else {
+            document.getElementById("deptSection").style.display = "none"
+        }
+
+    })
+})
 // 🔥 Generate input fields
 function generateRooms(){
 
     let count = document.getElementById("roomCount").value
     let container = document.getElementById("rooms")
+
+    let mode = document.querySelector("input[name='mode']:checked").value
 
     container.innerHTML = ""
 
@@ -110,9 +135,20 @@ function generateRooms(){
         <div class="room-box">
             <h3>Classroom ${i}</h3>
 
-            <input type="text" id="name${i}" placeholder="Room Name (e.g. Lab 1)">
+            <input type="text" id="name${i}" placeholder="Room Name">
             <input type="number" id="rows${i}" placeholder="Rows">
             <input type="number" id="cols${i}" placeholder="Columns">
+
+            ${
+                mode === "dept" ? `
+                <p>Select Departments:</p>
+                <label><input type="checkbox" class="dept${i}" value="CSE"> CSE</label>
+                <label><input type="checkbox" class="dept${i}" value="IT"> IT</label>
+                <label><input type="checkbox" class="dept${i}" value="ECE"> ECE</label>
+                <label><input type="checkbox" class="dept${i}" value="MECH"> MECH</label>
+                ` : ""
+            }
+
         </div>
         `
     }
@@ -125,13 +161,15 @@ function saveDetails(){
     let bench = document.getElementById("bench").value
     let msg = document.getElementById("msg")
 
+    let mode = document.querySelector("input[name='mode']:checked").value
+
     if(count == "" || bench == ""){
         msg.innerText = "Fill all fields ❌"
         msg.style.color = "red"
         return
     }
 
-    let rooms = []
+    let rooms = [] // ✅ FIX 1
 
     for(let i=1;i<=count;i++){
 
@@ -145,18 +183,33 @@ function saveDetails(){
             return
         }
 
+        let allowed_depts = []
+
+        // ✅ ONLY per-room checkbox
+        if(mode === "dept"){
+
+            document.querySelectorAll(".dept"+i+":checked")
+            .forEach(cb => allowed_depts.push(cb.value))
+
+            if(allowed_depts.length === 0){
+                msg.innerText = "Select dept for all rooms ❌"
+                msg.style.color = "red"
+                return
+            }
+        }
+
         rooms.push({
             room_name: name,
             row_count: rows,
-            col_count: cols
+            col_count: cols,
+            allowed_depts // send as array (better)
         })
     }
 
-    // 🔥 Send to server
     fetch("https://exam-seating-arrangement-k7ln.onrender.com/save-classrooms",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({bench, rooms})
+        body: JSON.stringify({bench, rooms, mode})
     })
     .then(res=>res.text())
     .then(data=>{
