@@ -1,0 +1,145 @@
+
+
+/* 🌌 BODY */
+body{
+    margin:0;
+    font-family: Arial;
+    background: radial-gradient(circle at top left, #1a0033, #000);
+    color:white;
+    padding:20px;
+    overflow-x:hidden;
+}
+
+/* ⭐ STARS */
+body::before{
+    content:"";
+    position:fixed;
+    width:300%;
+    height:300%;
+    background-image:
+        radial-gradient(1px 1px at 10% 20%, white, transparent),
+        radial-gradient(1px 1px at 30% 80%, #ccc, transparent),
+        radial-gradient(1px 1px at 50% 50%, #aaa, transparent),
+        radial-gradient(1px 1px at 70% 30%, white, transparent),
+        radial-gradient(1px 1px at 90% 70%, #ddd, transparent);
+    animation: moveStars 200s linear infinite, twinkle 4s infinite;
+    z-index:-2;
+}
+
+body::after{
+    content:"";
+    position:fixed;
+    width:200%;
+    height:200%;
+    background-image:
+        radial-gradient(2px 2px at 20% 40%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, #ccc, transparent);
+    animation: moveStars 120s linear infinite reverse, twinkle 3s infinite;
+    z-index:-1;
+}
+
+/* 🌠 SHOOTING STARS */
+.shooting-star{
+    position:fixed;
+    width:2px;
+    height:80px;
+    background: linear-gradient(-45deg, white, transparent);
+    top:-100px;
+    opacity:0;
+    animation: shoot 6s linear infinite;
+}
+
+.shooting-star:nth-child(1){ left:20%; animation-delay:2s;}
+.shooting-star:nth-child(2){ left:50%; animation-delay:5s;}
+.shooting-star:nth-child(3){ left:80%; animation-delay:8s;}
+
+@keyframes shoot{
+    0%{ transform:translateY(0) translateX(0) rotate(45deg); opacity:0;}
+    10%{opacity:1;}
+    100%{ transform:translateY(800px) translateX(-300px) rotate(45deg); opacity:0;}
+}
+
+@keyframes moveStars{
+    from{transform:translateY(0);}
+    to{transform:translateY(-1500px);}
+}
+
+@keyframes twinkle{
+    0%,100%{opacity:0.8;}
+    50%{opacity:0.3;}
+}
+
+/* 🧊 CONTAINER */
+#container{
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    border-radius:20px;
+    padding:20px;
+    box-shadow: 0 0 40px rgba(160,32,240,0.4);
+}
+
+/* HEADINGS */
+h1{
+    text-align:center;
+    color:#e0b3ff;
+    text-shadow:0 0 20px #a020f0;
+}
+
+h2{
+    margin-top:25px;
+    color:#ffccff;
+}
+
+h3{
+    color:#ccc;
+}
+
+h4{
+    color:#aaa;
+}
+
+/* ROW */
+.row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+/* BENCH */
+.bench{
+    border:1px solid rgba(255,255,255,0.2);
+    padding:10px;
+    margin:6px;
+    width:160px;
+    text-align:center;
+
+    background: rgba(255,255,255,0.08);
+    border-radius:10px;
+
+    font-size:13px;
+
+    box-shadow:0 0 10px rgba(160,32,240,0.2);
+}
+
+/* TEXT */
+p{
+    margin:4px;
+}
+
+/* BACK BUTTON */
+.back-btn{
+    margin:20px auto;
+    display:block;
+    padding:10px 20px;
+    border:none;
+    border-radius:20px;
+    background: linear-gradient(90deg, #a020f0, #ff00cc);
+    color:white;
+    cursor:pointer;
+    box-shadow:0 0 15px #a020f0;
+}
+
+.back-btn:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 25px #ff00cc;
+}

@@ -1,0 +1,214 @@
+/* BODY */
+body {
+    margin: 0;
+    font-family: Arial;
+    background: radial-gradient(circle at top left, #1a0033, #000);
+    color: white;
+
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* ⭐ STARS */
+body::before {
+    content: "";
+    position: fixed;
+    width: 300%;
+    height: 300%;
+    background-image:
+        radial-gradient(1px 1px at 10% 20%, white, transparent),
+        radial-gradient(1px 1px at 30% 80%, #ccc, transparent),
+        radial-gradient(1px 1px at 50% 50%, #aaa, transparent),
+        radial-gradient(1px 1px at 70% 30%, white, transparent),
+        radial-gradient(1px 1px at 90% 70%, #ddd, transparent);
+    animation: moveStars 200s linear infinite, twinkle 4s infinite;
+    z-index: -2;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background-image:
+        radial-gradient(2px 2px at 20% 40%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, #ccc, transparent);
+    animation: moveStars 120s linear infinite reverse, twinkle 3s infinite;
+    z-index: -1;
+}
+
+/* 🌠 Shooting Stars */
+.shooting-star {
+    position: fixed;
+    width: 2px;
+    height: 80px;
+    background: linear-gradient(-45deg, white, transparent);
+    top: -100px;
+    opacity: 0;
+    animation: shoot 6s linear infinite;
+}
+
+.shooting-star:nth-child(1) { left: 20%; animation-delay: 2s; }
+.shooting-star:nth-child(2) { left: 50%; animation-delay: 5s; }
+.shooting-star:nth-child(3) { left: 80%; animation-delay: 8s; }
+
+@keyframes shoot {
+    0% { transform: translateY(0) translateX(0) rotate(45deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(800px) translateX(-300px) rotate(45deg); opacity: 0; }
+}
+
+@keyframes moveStars {
+    from { transform: translateY(0); }
+    to { transform: translateY(-1500px); }
+}
+
+@keyframes twinkle {
+    0%,100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
+}
+
+/* CONTAINER */
+.container {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(18px);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+
+    box-shadow:
+        0 0 40px rgba(160,32,240,0.5),
+        inset 0 0 10px rgba(255,255,255,0.05);
+
+    padding: 30px 25px;
+    width: 90%;
+    max-width: 350px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    text-align: center;
+}
+
+/* TITLE */
+h1 {
+    margin: 0;
+    color: #e0b3ff;
+    text-shadow: 0 0 20px #a020f0;
+}
+
+/* SUBTITLE */
+.subtitle {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* INPUT BOX */
+.extra-box {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.extra-box input {
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    text-align: center;
+}
+
+/* ❌ REMOVE NUMBER ARROWS */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* BUTTON */
+button {
+    padding: 10px;
+    width: 100%;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(90deg, #a020f0, #ff00cc);
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #a020f0;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px #ff00cc;
+}
+
+/* CHECKBOX */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-container input {
+    display: none;
+}
+
+/* BOX */
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #a020f0;
+    border-radius: 4px;
+    position: relative;
+}
+
+/* CHECKED */
+.checkbox-container input:checked + .checkmark {
+    background: #a020f0;
+    box-shadow: 0 0 10px #ff00cc;
+}
+
+/* ✔ TICK */
+.checkmark::after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked + .checkmark::after {
+    display: block;
+}
+
+.checkbox-container .checkmark::after {
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* TEXT */
+.label-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ddd;
+}
+
+.checkbox-container input:checked ~ .label-text {
+    color: #fff;
+    text-shadow: 0 0 8px #a020f0;
+}

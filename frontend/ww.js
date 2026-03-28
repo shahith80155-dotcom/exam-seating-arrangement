@@ -1,49 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Forgot Password</title>
-<link rel="stylesheet" href="forgot.css">
-
-</head>
-
-<body>
-
-<!-- 🌠 shooting stars -->
-<div class="shooting-star"></div>
-<div class="shooting-star"></div>
-<div class="shooting-star"></div>
-
-<div class="box">
-<h2>Forgot Password 🔑</h2>
-
-<input type="email" id="email" placeholder="Enter Email" oninput="validateEmail()">
-<p id="emailErr" class="error"></p>
-
-<button id="otpBtn" onclick="sendOTP()" style="display:none;">Send OTP</button>
-
-<div id="otpSection" style="display:none;">
-    <input type="text" id="otp" placeholder="Enter OTP">
-
-    <input type="password" id="newpass" placeholder="New Password" oninput="validatePassword()">
-    <p id="passErr" class="error"></p>
-
-    <p id="timer"></p>
-
-    <button id="resendBtn" onclick="resendOTP()" disabled>Resend OTP</button>
-    <button id="resetBtn" onclick="resetPassword()">Reset Password</button>
-</div>
-
-<!-- ✅ BUTTON INSTEAD OF LINK -->
-<button class="back-btn" onclick="window.location.href='login.html'">
-    ← Back to Login
-</button>
-
-<p id="msg"></p>
-
-</div>
-
 <script>
-// (your SAM<script>
 
 let countdown
 
@@ -177,7 +132,5 @@ const msg = document.getElementById("msg")
 const emailErr = document.getElementById("emailErr")
 const newpass = document.getElementById("newpass")
 const passErr = document.getElementById("passErr")
-</script>
 
-</body>
-</html>
+</script>

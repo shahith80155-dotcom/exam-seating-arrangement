@@ -1,0 +1,268 @@
+/* 🌌 BODY */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: radial-gradient(circle at top left, #1a0033, #000);
+    color: white;
+    overflow-x: hidden;
+}
+
+/* ⭐ STAR BACKGROUND */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background-image:
+        radial-gradient(1px 1px at 10% 20%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, #aaa, transparent),
+        radial-gradient(1px 1px at 80% 10%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 80%, #ccc, transparent);
+    animation: moveStars 180s linear infinite;
+    z-index: -2;
+}
+
+body::after {
+    animation-duration: 120s;
+    opacity: 0.6;
+    z-index: -1;
+}
+
+/* ⭐ DOWNWARD ONLY */
+.shooting-star {
+    position: fixed;
+    width: 2px;
+    height: 80px;
+    background: linear-gradient(-45deg, white, transparent);
+    top: -100px;
+    left: random;
+    opacity: 0;
+    animation: shoot 6s linear infinite;
+}
+
+/* multiple shooting stars */
+.shooting-star:nth-child(1) { left: 20%; animation-delay: 2s; }
+.shooting-star:nth-child(2) { left: 50%; animation-delay: 5s; }
+.shooting-star:nth-child(3) { left: 80%; animation-delay: 8s; }
+
+@keyframes shoot {
+    0% {
+        transform: translateY(0) translateX(0) rotate(45deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(800px) translateX(-300px) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+/* ✨ TWINKLE */
+@keyframes twinkle {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
+}
+
+/* 🌠 STAR MOVEMENT */
+@keyframes moveStars {
+    from { transform: translateY(0); }
+    to { transform: translateY(-1500px); }
+}
+/* 📦 CONTAINER */
+.classroom-container {
+    max-width: 420px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 30px rgba(160,32,240,0.4);
+    text-align: center;
+}
+
+/* 📝 TEXT */
+h1 {
+    color: #e0b3ff;
+    text-shadow: 0 0 20px #a020f0;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #aaa;
+    margin-bottom: 20px;
+}
+
+/* 🔢 REMOVE NUMBER ARROWS */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* ✏️ INPUT */
+input {
+    width: 90%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+}
+
+input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.12);
+    box-shadow: 0 0 10px #a020f0;
+}
+
+/* 🔘 MODE SELECT */
+.mode {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+/* RADIO CARD */
+.radio-card {
+    flex: 1;
+    padding: 14px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.radio-card input {
+    display: none;
+}
+
+.radio-card span {
+    color: #aaa;
+    font-size: 14px;
+}
+
+/* hover */
+.radio-card:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* 🔥 FULL BOX SELECTED */
+.radio-card:has(input:checked) {
+    background: linear-gradient(90deg, #a020f0, #ff00cc);
+    box-shadow: 0 0 20px #a020f0;
+    transform: scale(1.05);
+}
+
+.radio-card input:checked + span {
+    color: white;
+    font-weight: 600;
+}
+
+/* 🔘 BUTTON */
+button {
+    padding: 8px 16px;
+    margin: 8px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    background: linear-gradient(90deg, #a020f0, #ff00cc);
+    color: white;
+
+    box-shadow: 0 0 12px #a020f0;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #ff00cc;
+}
+
+/* 🔴 DANGER */
+button.danger {
+    background: linear-gradient(90deg, #ff0033, #ff4d4d);
+    box-shadow: 0 0 12px red;
+}
+
+/* 🧱 ROOM BOX */
+.room-box {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+}
+
+/* 🏷️ DEPT CHIPS */
+.dept {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    color: #bbb;
+}
+
+.chip input {
+    display: none;
+}
+
+/* hover */
+.chip:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+/* 🔥 SELECTED CHIP */
+.chip input:checked + span {
+    color: white;
+    font-weight: bold;
+    background: linear-gradient(90deg, #a020f0, #ff00cc);
+    padding: 5px 10px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px #a020f0;
+}
+
+/* 📩 MESSAGE */
+#msg {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ✨ SMOOTH */
+* {
+    transition: all 0.25s ease;
+}
+.back-btn {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    border-radius: 25px;
+    border: none;
+    background: linear-gradient(90deg, #444, #888);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #666, #aaa);
+}

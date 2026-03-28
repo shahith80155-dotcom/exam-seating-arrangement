@@ -2,12 +2,27 @@
 <html>
 <head>
     <title>Previous Seatings</title>
+
+<link rel="stylesheet" href="history.css">
+
 </head>
+
 <body>
 
+<!-- shooting stars -->
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+
 <h1>Previous Seatings</h1>
-<p id="msg" style="font-weight:bold;"></p>
+<p id="msg" style="text-align:center;"></p>
+
 <div id="list"></div>
+
+<!-- ✅ BACK BUTTON -->
+<button class="back-btn" onclick="goDashboard()">
+    ⬅ Back to Dashboard
+</button>
 
 <script>
 
@@ -20,21 +35,20 @@ fetch("https://exam-seating-arrangement-k7ln.onrender.com/seating-history")
     data.forEach(item => {
 
         let div = document.createElement("div")
-        div.style.border = "1px solid black"
-        div.style.margin = "10px"
-        div.style.padding = "10px"
+        div.className = "history-card"
 
         div.innerHTML = `
             <h3>ID: ${item.id}</h3>
             <p>Unseated: ${item.unseated.length}</p>
             <p>Date: ${new Date(item.created_at).toLocaleString()}</p>
 
-            <button onclick='viewSeating(${JSON.stringify(item)})'>
+            <button class="view-btn"
+                onclick='viewSeating(${JSON.stringify(item)})'>
                 View
             </button>
 
-            <button onclick="deleteHistory(${item.id})" 
-                style="background:red; color:white;">
+            <button class="delete-btn"
+                onclick="deleteHistory(${item.id})">
                 Delete
             </button>
         `
@@ -43,29 +57,30 @@ fetch("https://exam-seating-arrangement-k7ln.onrender.com/seating-history")
     })
 })
 
-// ✅ VIEW FUNCTION
+// VIEW
 function viewSeating(data){
     localStorage.setItem("seating", JSON.stringify(data))
     window.location.href = "view.html"
 }
 
-// ✅ DELETE FUNCTION
+// DELETE
 function deleteHistory(id){
-
-    fetch(`https://exam-seating-arrangement-k7ln.onrender.com/delete-history/${id}`, {
-        method: "DELETE"
+    fetch(`https://exam-seating-arrangement-k7ln.onrender.com/delete-history/${id}`,{
+        method:"DELETE"
     })
-    .then(res => res.text())
-    .then(msg => {
-
+    .then(res=>res.text())
+    .then(msg=>{
         let message = document.getElementById("msg")
         message.innerText = msg
         message.style.color = "red"
 
-        setTimeout(() => {
-            location.reload()
-        }, 1000)
+        setTimeout(()=>location.reload(),1000)
     })
+}
+
+// ✅ BACK FUNCTION
+function goDashboard(){
+    window.location.href = "/dashboard.html"  // change if needed
 }
 
 </script>

@@ -9,31 +9,32 @@
 <div class="shooting-star"></div>
 <div class="shooting-star"></div>
 <div class="shooting-star"></div>
-
 <div class="dashboard-container">
 
-    <h1 id="welcome">Exam Seat Allocation System</h1>
+    <h1 id="welcome">Welcome 👋</h1>
+    <br>
+    <br>
 
     <div class="menu">
 
-        <a href="classroom.html">
-            <div class="card">📚 Add Classroom</div>
+        <a href="classroom.html" class="link-card">
+            <div class="card">📚 Add Classrooms</div>
         </a>
 
-        <a href="students.html">
+        <a href="students.html" class="link-card">
             <div class="card">📄 Upload Students</div>
         </a>
 
-        <a href="seating.html">
+        <a href="seating.html" class="link-card">
             <div class="card">⚙️ Generate Seating</div>
         </a>
 
-        <a href="view.html">
+        <a href="view.html" class="link-card">
             <div class="card">👁 View Seating</div>
         </a>
 
         <div class="card" onclick="window.location.href='history.html'">
-            🕘 History
+            🕘 View History
         </div>
 
         <div class="card danger" onclick="openPopup()">
@@ -46,7 +47,7 @@
     <div id="popup">
         <div class="popup-box">
             <h3>⚠️ Warning</h3>
-            <p>This will delete ALL data.<br>Are you sure?</p>
+            <p>This will permanently delete all data.<br>Continue?</p>
 
             <button class="danger" onclick="confirmReset()">Yes, Delete</button>
             <button onclick="closePopup()">Cancel</button>
@@ -54,7 +55,6 @@
     </div>
 
     <p id="msg"></p>
-    
 
     <button class="logout" onclick="logout()">Logout</button>
 
@@ -69,6 +69,12 @@ if(!user){
 
 document.getElementById("welcome").innerText =
     "Welcome, " + user + " 👋"
+
+// ensure popup hidden
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("popup").style.display = "none";
+})
+
 function openPopup(){
     document.getElementById("popup").style.display = "flex"
 }
@@ -97,73 +103,6 @@ function logout(){
     window.location.href = "login.html"
 }
 </script>
-<script>
-const canvas = document.getElementById("particles");
-const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let particles = [];
-let mouse = { x: 0, y: 0 };
-
-// 🚀 SHUTTLE IMAGE
-const shuttle = new Image();
-shuttle.src = "https://cdn-icons-png.flaticon.com/512/3212/3212608.png";
-
-// TRACK MOUSE
-window.addEventListener("mousemove", (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-
-    for(let i = 0; i < 6; i++){
-        particles.push({
-            x: mouse.x,
-            y: mouse.y,
-            size: Math.random() * 3 + 1,
-            speedX: (Math.random() - 0.5) * 2,
-            speedY: (Math.random() - 0.5) * 2,
-            life: 80,
-            hue: Math.random() * 360
-        });
-    }
-});
-
-// DRAW
-function animate(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // ✨ PARTICLES
-    particles.forEach((p, i) => {
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.life--;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, 0.8)`;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = `hsl(${p.hue}, 100%, 60%)`;
-        ctx.fill();
-
-        if(p.life <= 0){
-            particles.splice(i, 1);
-        }
-    });
-
-    // 🚀 DRAW SHUTTLE
-    ctx.drawImage(shuttle, mouse.x - 15, mouse.y - 15, 30, 30);
-
-    requestAnimationFrame(animate);
-}
-
-animate();
-
-// RESIZE FIX
-window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
-</script>
 </body>
 </html>

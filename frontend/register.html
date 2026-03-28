@@ -2,55 +2,20 @@
 <html>
 <head>
 <title>Register</title>
-
-<style>
-body{
-    font-family: Arial;
-    text-align:center;
-    background:#f4f4f4;
-}
-.box{
-    background:white;
-    padding:20px;
-    width:300px;
-    margin:auto;
-    margin-top:80px;
-    box-shadow:0 0 10px gray;
-}
-input{
-    width:90%;
-    padding:8px;
-    margin:5px;
-}
-.error{
-    color:red;
-    font-size:12px;
-    margin:0;
-}
-.success{
-    color:green;
-    font-size:13px;
-}
-button{
-    padding:8px 15px;
-    margin:10px;
-    background:green;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-#timer{
-    color:red;
-    font-size:14px;
-}
-</style>
+<link rel="stylesheet" href="register.css">
 
 </head>
 
 <body>
 
+<!-- 🌠 Shooting Stars -->
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+
 <div class="box">
-<h2>Register</h2>
+
+<h2>Register 🚀</h2>
 
 <input type="text" id="fname" placeholder="First Name" oninput="validateForm()">
 <p id="fnameErr" class="error"></p>
@@ -76,14 +41,16 @@ button{
 <button id="otpBtn" onclick="sendOTP()" style="display:none;">Send OTP</button>
 
 <div id="otpSection" style="display:none;">
-    <input type="text" id="otp" placeholder="Enter OTP"><br>
+    <input type="text" id="otp" placeholder="Enter OTP">
     <p id="timer"></p>
 
-    <button id="resendBtn" onclick="resendOTP()" disabled>Resend OTP</button><br>
+    <button id="resendBtn" onclick="resendOTP()" disabled>Resend OTP</button>
     <button id="registerBtn" onclick="register()">Verify & Register</button>
 </div>
 
-<p><a href="login.html">Back to Login</a></p>
+<button class="back-btn" onclick="window.location.href='login.html'">
+    ← Back to Login
+</button>
 
 <p id="msg"></p>
 

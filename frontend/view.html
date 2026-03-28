@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>View Seating</title>
-    <style>
-        body { font-family: Arial; }
-        .row { display: flex; }
-        .bench {
-            border: 1px solid black;
-            padding: 10px;
-            margin: 5px;
-            width: 160px;
-            text-align: center;
-            background: #f5f5f5;
-            font-size: 13px;
-        }
-    </style>
+<title>View Seating</title>
+
+<link rel="stylesheet" href="view.css">
+
 </head>
+
 <body>
 
-<h1>Seating Arrangement</h1>
+<!-- 🌠 Shooting stars -->
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+
+<h1>Seating Arrangement 🪑</h1>
+
 <div id="container"></div>
+
+<button class="back-btn" onclick="window.location.href='../dashboard.html'">
+    ← Back
+</button>
 
 <script>
 
 let data = JSON.parse(localStorage.getItem("seating"))
-console.log("FULL DATA:", data) // ✅ DEBUG
-
 let container = document.getElementById("container")
 
 if(!data){
@@ -33,7 +32,7 @@ if(!data){
 }
 else {
 
-    // ✅ SEATING
+    // SEATING
     data.seating.forEach(room => {
 
         let title = document.createElement("h2")
@@ -63,7 +62,7 @@ else {
         })
     })
 
-    // ✅ UNSEATED STUDENTS
+    // UNSEATED
     if(data.unseated && data.unseated.length > 0){
 
         let title = document.createElement("h2")
@@ -81,33 +80,34 @@ else {
         msg.innerText = "All students seated ✅"
         container.appendChild(msg)
     }
-    // ✅ ROOM DEPARTMENT LIST
-if(data.roomDeptList){
 
-    let title = document.createElement("h2")
-    title.innerText = "Room-wise Department List"
-    container.appendChild(title)
+    // ROOM DEPT LIST
+    if(data.roomDeptList){
 
-    data.roomDeptList.forEach(room => {
+        let title = document.createElement("h2")
+        title.innerText = "Room-wise Department List"
+        container.appendChild(title)
 
-        let roomTitle = document.createElement("h3")
-        roomTitle.innerText = "Room " + room.room
-        container.appendChild(roomTitle)
+        data.roomDeptList.forEach(room => {
 
-        for(let dept in room.departments){
+            let roomTitle = document.createElement("h3")
+            roomTitle.innerText = "Room " + room.room
+            container.appendChild(roomTitle)
 
-            let deptTitle = document.createElement("h4")
-            deptTitle.innerText = dept
-            container.appendChild(deptTitle)
+            for(let dept in room.departments){
 
-            room.departments[dept].forEach(student => {
-                let p = document.createElement("p")
-                p.innerText = student
-                container.appendChild(p)
-            })
-        }
-    })
-}
+                let deptTitle = document.createElement("h4")
+                deptTitle.innerText = dept
+                container.appendChild(deptTitle)
+
+                room.departments[dept].forEach(student => {
+                    let p = document.createElement("p")
+                    p.innerText = student
+                    container.appendChild(p)
+                })
+            }
+        })
+    }
 }
 
 </script>

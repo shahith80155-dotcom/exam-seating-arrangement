@@ -2,80 +2,110 @@
 <html>
 <head>
     <title>Generate Seating</title>
+    <link rel="stylesheet" href="seating.css">
 </head>
+
 <body>
 
-<h2>Generate Seating</h2>
+<!-- 🌠 Shooting Stars -->
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
 
-<label>
-  <input type="checkbox" id="extraRoom">
-  Create Extra Room
-</label>
+<div class="container">
 
-<div id="extraInputs" style="display:none; margin-top:10px;">
-  <label>Rows:</label>
-  <input type="number" id="extraRows">
+    <h1>Generate Seating ⚙️</h1>
+    <p class="subtitle">Create seating arrangement easily</p>
 
-  <label>Columns:</label>
-  <input type="number" id="extraCols">
+    <!-- Checkbox -->
+    <label class="checkbox-container">
+        <input type="checkbox" id="extraRoom">
+        <span class="checkmark"></span>
+        <span class="label-text">Add Extra Room</span>
+    </label>
 
-  <label>Bench:</label>
-  <input type="number" id="extraBench" value="1">
+    <!-- Extra Inputs -->
+    <div id="extraInputs" class="extra-box" style="display:none;">
+        <input type="number" id="extraRows" placeholder="Rows" min="1">
+        <input type="number" id="extraCols" placeholder="Columns" min="1">
+        <input type="number" id="extraBench" placeholder="Bench" value="1" min="1">
+    </div>
+
+    <!-- Buttons -->
+    <button onclick="generateSeating()">Generate Seating</button>
+    <button onclick="goToView()" class="view-btn">View Seating</button>
+
+    <p id="msg"></p>
+
+    <!-- ✅ BACK BUTTON -->
+    <button class="back-btn" onclick="goDashboard()">← Back to Dashboard</button>
+
 </div>
-
-<br><br>
-
-<button onclick="generateSeating()">Generate Seating</button>
 
 <script>
 
-// ✅ SHOW / HIDE INPUTS
-document.getElementById("extraRoom").addEventListener("change", function() {
-
+// SHOW / HIDE EXTRA INPUTS
+document.getElementById("extraRoom").addEventListener("change", function () {
     let box = document.getElementById("extraInputs")
-    let disabled = !this.checked
-
-    box.style.display = this.checked ? "block" : "none"
-
-    document.getElementById("extraRows").disabled = disabled
-    document.getElementById("extraCols").disabled = disabled
-    document.getElementById("extraBench").disabled = disabled
+    box.style.display = this.checked ? "flex" : "none"
 })
 
-
-// ✅ GENERATE FUNCTION
+// GENERATE FUNCTION
 function generateSeating() {
 
     let allowExtra = document.getElementById("extraRoom").checked
+    let msg = document.getElementById("msg")
 
     let url = "https://exam-seating-arrangement-k7ln.onrender.com/generate-seating?extra=" + allowExtra
 
-    // ✅ only send extra data if checked
-    if(allowExtra){
+    if (allowExtra) {
 
         let rows = document.getElementById("extraRows").value
         let cols = document.getElementById("extraCols").value
         let bench = document.getElementById("extraBench").value || 1
 
-        if(!rows || !cols){
-            alert("Please enter rows and columns ❌")
+        if (!rows || !cols) {
+            msg.innerText = "Enter rows and columns ❌"
+            msg.style.color = "red"
+            return
+        }
+
+        if (rows <= 0 || cols <= 0 || bench <= 0) {
+            msg.innerText = "Values must be greater than 0 ❌"
+            msg.style.color = "red"
             return
         }
 
         url += `&rows=${rows}&cols=${cols}&bench=${bench}`
     }
 
+    msg.innerText = "Generating seating..."
+    msg.style.color = "white"
+
     fetch(url)
     .then(res => res.json())
     .then(data => {
 
-        console.log("DATA:", data)
-
         localStorage.clear()
         localStorage.setItem("seating", JSON.stringify(data))
 
-        window.location.href = "view.html"
+        msg.innerText = "Seating generated successfully ✅"
+        msg.style.color = "lightgreen"
     })
+    .catch(() => {
+        msg.innerText = "Error generating seating ❌"
+        msg.style.color = "red"
+    })
+}
+
+// VIEW PAGE
+function goToView(){
+    window.location.href = "view.html"
+}
+
+// BACK TO DASHBOARD
+function goDashboard(){
+    window.location.href = "dashboard.html"
 }
 
 </script>

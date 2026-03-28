@@ -1,208 +1,159 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Classroom Details</title>
-
-<style>
-body{
-    font-family: Arial;
-    text-align:center;
-    background:#f4f4f4;
-}
-.classroom-container{
-    background:white;
-    padding:20px;
-    width:350px;
-    margin:auto;
-    margin-top:80px;
-    box-shadow:0 0 10px gray;
-}
-input{
-    width:90%;
-    padding:8px;
-    margin:5px;
-}
-button{
-    padding:8px 15px;
-    margin:10px;
-    background:green;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-.room-box{
-    border:1px solid #ccc;
-    padding:10px;
-    margin:10px 0;
-}
-#msg{
-    font-size:14px;
-    margin-top:10px;
-}
-</style>
-
+    <title>Classroom Setup</title>
+    <link rel="stylesheet" href="class.css">
 </head>
 
 <body>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
 
 <div class="classroom-container">
 
-<h2>Classroom Details</h2>
+    <h1>Classroom Setup 🚀</h1>
+    <p class="subtitle">Configure rooms and seating</p>
 
-<label>Number of Classrooms</label><br>
-<input type="number" id="roomCount" placeholder="Enter number of classrooms">
+    <input type="number" id="roomCount" placeholder="Number of Classrooms" min="1">
+    <input type="number" id="bench" placeholder="Students per Bench" min="1">
 
-<br>
+    <div class="mode">
+        <label class="radio-card">
+            <input type="radio" name="mode" value="normal" checked>
+            <span>🚀 Normal</span>
+        </label>
 
-<label>Students per Bench</label><br>
-<input type="number" id="bench" placeholder="Students per bench">
+        <label class="radio-card">
+            <input type="radio" name="mode" value="dept">
+            <span>🏫 Department</span>
+        </label>
+    </div>
 
-<br>
-<label>
-    <input type="radio" name="mode" value="normal" checked>
-    Normal Allocation
-</label>
+    <button onclick="generateRooms()">Generate</button>
 
-<label>
-    <input type="radio" name="mode" value="dept">
-    Department-wise Allocation
-</label>
+    <div id="rooms"></div>
 
+    <button onclick="saveDetails()" class="primary">Save</button>
+    <button onclick="deleteAllClassrooms()" class="danger">Delete All</button>
 
-<button onclick="generateRooms()">Create Classroom Fields</button>
+    <p id="msg"></p>
 
-<div id="rooms"></div>
-
-<button onclick="saveDetails()">Save Details</button>
-
-<button onclick="deleteAllClassrooms()" 
-    style="background:red; color:white;">
-    Delete All Classrooms
-</button>
-
-<p id="msg"></p>
+    <!-- ✅ BACK BUTTON -->
+    <button class="back-btn" onclick="goBack()">← Back to Dashboard</button>
 
 </div>
 
 <script>
-
-// 🔐 protect page
 let user = localStorage.getItem("user")
-if(!user){
-    window.location.href = "login.html"
-}
-function deleteAllClassrooms(){
+if(!user) window.location.href = "login.html"
 
+function goBack(){
+    window.location.href = "dashboard.html"
+}
+
+function deleteAllClassrooms(){
     fetch("https://exam-seating-arrangement-k7ln.onrender.com/delete-all-classrooms", {
         method: "DELETE"
     })
     .then(res => res.text())
     .then(msg => {
-
         document.getElementById("msg").innerText = msg
-
-        setTimeout(() => {
-            location.reload()
-        }, 1000)
+        setTimeout(() => location.reload(), 1000)
     })
 }
-document.querySelectorAll("input[name='mode']").forEach(radio => {
-    radio.addEventListener("change", () => {
 
-        let mode = document.querySelector("input[name='mode']:checked").value
-
-        if(mode === "dept"){
-            document.getElementById("deptSection").style.display = "block"
-        } else {
-            document.getElementById("deptSection").style.display = "none"
-        }
-
-    })
-})
-// 🔥 Generate input fields
 function generateRooms(){
 
     let count = document.getElementById("roomCount").value
     let container = document.getElementById("rooms")
-
     let mode = document.querySelector("input[name='mode']:checked").value
+
+    if(!count || count <= 0){
+        alert("Enter valid classroom count ❌")
+        return
+    }
 
     container.innerHTML = ""
 
     for(let i=1;i<=count;i++){
-
         container.innerHTML += `
         <div class="room-box">
-            <h3>Classroom ${i}</h3>
+            <h3>Room ${i}</h3>
 
             <input type="text" id="name${i}" placeholder="Room Name">
-            <input type="number" id="rows${i}" placeholder="Rows">
-            <input type="number" id="cols${i}" placeholder="Columns">
 
-            ${
-                mode === "dept" ? `
-                <p>Select Departments:</p>
-                <label><input type="checkbox" class="dept${i}" value="CSE"> CSE</label>
-                <label><input type="checkbox" class="dept${i}" value="IT"> IT</label>
-                <label><input type="checkbox" class="dept${i}" value="ECE"> ECE</label>
-                <label><input type="checkbox" class="dept${i}" value="MECH"> MECH</label>
-                ` : ""
-            }
+            <input type="number" id="rows${i}" placeholder="Rows" min="1">
+            <input type="number" id="cols${i}" placeholder="Columns" min="1">
 
-        </div>
-        `
+            ${mode === "dept" ? `
+            <div class="dept">
+                <label class="chip">
+                    <input type="checkbox" class="dept${i}" value="CSE">
+                    <span>CSE</span>
+                </label>
+                <label class="chip">
+                    <input type="checkbox" class="dept${i}" value="IT">
+                    <span>IT</span>
+                </label>
+                <label class="chip">
+                    <input type="checkbox" class="dept${i}" value="ECE">
+                    <span>ECE</span>
+                </label>
+                <label class="chip">
+                    <input type="checkbox" class="dept${i}" value="MECH">
+                    <span>MECH</span>
+                </label>
+            </div>
+            ` : ""}
+        </div>`
     }
 }
 
-// 🔥 Save to backend
 function saveDetails(){
 
     let count = document.getElementById("roomCount").value
     let bench = document.getElementById("bench").value
     let msg = document.getElementById("msg")
-
     let mode = document.querySelector("input[name='mode']:checked").value
 
-    if(count == "" || bench == ""){
-        msg.innerText = "Fill all fields ❌"
+    if(!count || !bench || count <= 0 || bench <= 0){
+        msg.innerText = "Enter valid positive values ❌"
         msg.style.color = "red"
         return
     }
 
-    let rooms = [] // ✅ FIX 1
+    let rooms = []
 
     for(let i=1;i<=count;i++){
 
-        let name = document.getElementById("name"+i).value || ("Room " + i)
         let rows = document.getElementById("rows"+i).value
         let cols = document.getElementById("cols"+i).value
 
-        if(rows == "" || cols == ""){
-            msg.innerText = "Enter all classroom details ❌"
+        if(!rows || !cols || rows <= 0 || cols <= 0){
+            msg.innerText = "Rows & Columns must be > 0 ❌"
             msg.style.color = "red"
             return
         }
 
         let allowed_depts = []
 
-        // ✅ ONLY per-room checkbox
         if(mode === "dept"){
-
             document.querySelectorAll(".dept"+i+":checked")
             .forEach(cb => allowed_depts.push(cb.value))
 
             if(allowed_depts.length === 0){
-                msg.innerText = "Select dept for all rooms ❌"
+                msg.innerText = "Select departments ❌"
                 msg.style.color = "red"
                 return
             }
         }
 
         rooms.push({
-            room_name: name,
+            room_name: document.getElementById("name"+i).value || ("Room "+i),
             row_count: rows,
             col_count: cols,
-            allowed_depts // send as array (better)
+            allowed_depts
         })
     }
 
@@ -216,12 +167,7 @@ function saveDetails(){
         msg.innerText = data
         msg.style.color = "green"
     })
-    .catch(()=>{
-        msg.innerText = "Server error ❌"
-        msg.style.color = "red"
-    })
 }
-
 </script>
 
 </body>
