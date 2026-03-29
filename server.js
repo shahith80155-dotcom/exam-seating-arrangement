@@ -359,12 +359,10 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                solveSeating(grid, tempStudents)
+                solveSeating(grid, tempStudents, 0, {count:0})
 
                 // remove placed students
-                students = students.filter(s =>
-                    tempStudents.find(ts => ts.regno === s.regno)
-                )
+                students = tempStudents
 
                 allRooms.push({
                     room: room.room_name,
@@ -387,12 +385,23 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                solveSeating(extraGrid, tempStudents)
+if(!solveSeating(extraGrid, tempStudents, 0, {count:0})){
+    // 🔥 fallback fill
+    for(let r=0; r<extraRows; r++){
+        for(let c=0; c<extraCols; c++){
+            for(let b=0; b<extraBench; b++){
 
-                students = students.filter(s =>
-                    tempStudents.find(ts => ts.regno === s.regno)
-                )
+                if(tempStudents.length === 0) break
 
+                if(extraGrid[r][c][b] === null){
+                    extraGrid[r][c][b] = tempStudents.shift()
+                }
+            }
+        }
+    }
+}
+
+                students = tempStudents
                 allRooms.push({
                     room: "Extra Room",
                     layout: extraGrid
@@ -462,7 +471,9 @@ app.get("/generate-seating", (req, res) => {
 
 
 // ================= FUNCTIONS =================
-function solveSeating(grid, students, index = 0){
+function solveSeating(grid, students, index = 0, attempts = {count:0}){
+
+    if(attempts.count++ > 50000) return false  // 🔥 LIMIT
 
     let rows = grid.length
     let cols = grid[0].length
@@ -475,21 +486,19 @@ function solveSeating(grid, students, index = 0){
     let r = Math.floor(index / (cols * bench))
     let c = Math.floor((index % (cols * bench)) / bench)
     let b = index % bench
-
-    if(grid[r][c][b] !== null){
-        return solveSeating(grid, students, index + 1)
-    }
-
+if(grid[r][c][b] !== null){
+    return solveSeating(grid, students, index + 1, attempts)
+}
     for(let i = 0; i < students.length; i++){
 
         let s = students[i]
 
-        if(isSubjectSafe(s, r, c, grid)){
+        if(isSubjectSafe(s, r, c, grid)&&isDeptSafe(s, r, c, grid)){
 
             grid[r][c][b] = s
             students.splice(i, 1)
 
-            if(solveSeating(grid, students, index + 1)){
+            if(solveSeating(grid, students, index + 1, attempts)){
                 return true
             }
 
