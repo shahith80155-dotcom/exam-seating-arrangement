@@ -404,11 +404,11 @@ app.get("/generate-seating", (req, res) => {
                 }
             }
 
-            // 3️⃣ FINAL FILL (no empty seats
+            
             }
         }
     }
-}
+
 
                 allRooms.push({
                     room: room.room_name,
