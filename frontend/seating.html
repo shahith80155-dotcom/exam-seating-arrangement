@@ -6,7 +6,9 @@
 </head>
 
 <body>
-
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
+<div class="shooting-star"></div>
 <div class="container">
 
     <h1>⚙️ Generate Seating</h1>
@@ -18,21 +20,21 @@
         <div class="mode-box">
             <p class="mode-title">Select Mode</p>
 
-            <label class="radio">
+            <label>
                 <input type="radio" name="mode" value="normal" checked>
-                <span>Normal Mode</span>
+                Normal
             </label>
 
-            <label class="radio">
+            <label>
                 <input type="radio" name="mode" value="strict">
-                <span>Strict Mode</span>
+                Strict
             </label>
         </div>
 
         <!-- INFO -->
         <div class="info-box">
             <p>✔ Normal → same subject CAN sit together</p>
-            <p>✔ Strict → no same subject adjacent (may leave empty seats)</p>
+            <p>✔ Strict → no same subject adjacent</p>
         </div>
 
         <!-- EXTRA ROOMS -->
@@ -49,7 +51,7 @@
 
         </div>
 
-        <!-- BUTTON -->
+        <!-- BUTTONS -->
         <button class="btn" onclick="generateSeating()">Generate Seating</button>
         <button class="btn secondary" onclick="goToView()">View Seating</button>
 
@@ -61,38 +63,38 @@
 
 <script>
 
-// 🔐 Auth check
+// Auth
 let user = localStorage.getItem("user")
 if(!user) window.location.href = "login.html"
 
-// SHOW EXTRA INPUTS
+// Toggle extra
 document.getElementById("extraRoom").addEventListener("change", function () {
     document.getElementById("extraInputs").style.display =
         this.checked ? "flex" : "none"
 })
 
-// CREATE ROOM INPUTS
+// Create room inputs
 document.getElementById("roomCount").addEventListener("input", function(){
 
-    let count = this.value
+    let count = parseInt(this.value)
     let container = document.getElementById("roomFields")
-
     container.innerHTML = ""
 
-    for(let i = 1; i <= count; i++){
+    if(count <= 0) return
 
+    for(let i = 1; i <= count; i++){
         container.innerHTML += `
             <div class="room-card">
                 <input type="text" placeholder="Room ${i} Name" id="roomName${i}">
-                <input type="number" placeholder="Rows" id="rows${i}">
-                <input type="number" placeholder="Cols" id="cols${i}">
-                <input type="number" placeholder="Bench" id="bench${i}" value="1">
+                <input type="number" placeholder="Rows" id="rows${i}" min="1">
+                <input type="number" placeholder="Cols" id="cols${i}" min="1">
+                <input type="number" placeholder="Bench" id="bench${i}" value="1" min="1">
             </div>
         `
     }
 })
 
-// MAIN FUNCTION
+// Generate seating
 function generateSeating(){
 
     let msg = document.getElementById("msg")
@@ -100,17 +102,14 @@ function generateSeating(){
     let mode = document.querySelector('input[name="mode"]:checked').value
     let strict = mode === "strict"
 
-    msg.innerText = "Generating..."
-    msg.style.color = "white"
-
     let extraRooms = []
 
     if(allowExtra){
 
-        let count = document.getElementById("roomCount").value
+        let count = parseInt(document.getElementById("roomCount").value)
 
-        if(!count){
-            msg.innerText = "Enter number of rooms ❌"
+        if(!count || count <= 0){
+            msg.innerText = "Room count must be > 0 ❌"
             msg.style.color = "red"
             return
         }
@@ -118,9 +117,9 @@ function generateSeating(){
         for(let i = 1; i <= count; i++){
 
             let name = document.getElementById(`roomName${i}`).value
-            let rows = document.getElementById(`rows${i}`).value
-            let cols = document.getElementById(`cols${i}`).value
-            let bench = document.getElementById(`bench${i}`).value || 1
+            let rows = parseInt(document.getElementById(`rows${i}`).value)
+            let cols = parseInt(document.getElementById(`cols${i}`).value)
+            let bench = parseInt(document.getElementById(`bench${i}`).value) || 1
 
             if(!name || !rows || !cols){
                 msg.innerText = `Fill all fields for Room ${i} ❌`
@@ -128,14 +127,23 @@ function generateSeating(){
                 return
             }
 
+            if(rows <= 0 || cols <= 0 || bench <= 0){
+                msg.innerText = "Values must be greater than 0 ❌"
+                msg.style.color = "red"
+                return
+            }
+
             extraRooms.push({
                 room_name: name,
-                row_count: parseInt(rows),
-                col_count: parseInt(cols),
-                bench: parseInt(bench)
+                row_count: rows,
+                col_count: cols,
+                bench: bench
             })
         }
     }
+
+    msg.innerText = "Generating..."
+    msg.style.color = "white"
 
     fetch("https://exam-seating-arrangement-k7ln.onrender.com/generate-seating", {
         method: "POST",
@@ -152,13 +160,11 @@ function generateSeating(){
 
         localStorage.setItem("seating", JSON.stringify(data))
 
-        if(strict){
-            msg.innerText = "Strict mode applied ⚠️ (some seats may be empty)"
-            msg.style.color = "orange"
-        } else {
-            msg.innerText = "Normal mode applied ✅"
-            msg.style.color = "lightgreen"
-        }
+        msg.innerText = strict
+            ? "Strict mode applied ⚠️"
+            : "Normal mode applied ✅"
+
+        msg.style.color = strict ? "orange" : "lightgreen"
     })
     .catch(() => {
         msg.innerText = "Error generating ❌"
@@ -166,7 +172,6 @@ function generateSeating(){
     })
 }
 
-// VIEW PAGE
 function goToView(){
     window.location.href = "view.html"
 }

@@ -98,7 +98,7 @@ app.post("/send-otp", async (req, res) => {
 
     } catch (err) {
         console.log("MAIL ERROR:", err)
-        res.send("Error sending OTP ❌")
+        res.send("Error sending OTP ")
     }
 })
 
@@ -109,7 +109,7 @@ app.post("/register", (req, res) => {
 
     // ✅ Check OTP exists
     if (!otpStore[email]) {
-        return res.send("OTP not found ❌")
+        return res.send("OTP not found ")
     }
 
     // ✅ Check expiry (1 min)
@@ -120,7 +120,7 @@ app.post("/register", (req, res) => {
 
     // ✅ Check OTP match
     if (otpStore[email].otp != otp) {
-        return res.send("Invalid OTP ❌")
+        return res.send("Invalid OTP ")
     }
 
     // ✅ Check user exists
@@ -129,11 +129,11 @@ app.post("/register", (req, res) => {
     db.query(check, [username], (err, result) => {
 
         if (err) {
-            return res.send("Server error ❌")
+            return res.send("Server error ")
         }
 
         if (result.length > 0) {
-            return res.send("User exists ❌")
+            return res.send("User exists ")
         }
 
         // ✅ Insert user
@@ -143,7 +143,7 @@ app.post("/register", (req, res) => {
         db.query(sql, [fname, lname, email, dob, username, password], (err) => {
 
             if (err) {
-                return res.send("Error saving user ❌")
+                return res.send("Error saving user ")
             }
 
             // ✅ Clear OTP after success
@@ -163,13 +163,13 @@ app.post("/login", (req, res) => {
 db.query(sql, [username, username, password], (err, result) => {
 
         if(err){
-            return res.json({success:false, msg:"Server error ❌"})
+            return res.json({success:false, msg:"Server error "})
         }
 
         if(result.length > 0){
             res.json({success:true, msg:"Login success ✅"})
         }else{
-            res.json({success:false, msg:"Invalid user or password ❌"})
+            res.json({success:false, msg:"Invalid user or password "})
         }
     })
 })
@@ -183,10 +183,10 @@ app.post("/forgot-otp", async (req, res) => {
 
     db.query(check, [email], async (err, result) => {
 
-        if(err) return res.send("Server error ❌")
+        if(err) return res.send("Server error ")
 
         if(result.length === 0){
-            return res.send("Email not found ❌")
+            return res.send("Email not found ")
         }
 
         let otp = Math.floor(100000 + Math.random()*900000)
@@ -208,7 +208,7 @@ app.post("/forgot-otp", async (req, res) => {
 
         } catch (err) {
             console.log("MAIL ERROR:", err)
-            res.send("Error sending OTP ❌")
+            res.send("Error sending OTP ")
         }
 
     })
@@ -220,16 +220,16 @@ app.post("/reset-password", (req,res)=>{
     let { email, otp, newPassword } = req.body
 
     if(!otpStore[email]){
-        return res.send("OTP not found ❌")
+        return res.send("OTP not found ")
     }
 
     if(Date.now() - otpStore[email].time > 60000){
         delete otpStore[email]
-        return res.send("OTP expired ❌")
+        return res.send("OTP expired ")
     }
 
     if(otpStore[email].otp != otp){
-        return res.send("Invalid OTP ❌")
+        return res.send("Invalid OTP ")
     }
 
     let sql = "UPDATE users SET password=? WHERE email=?"
@@ -239,7 +239,7 @@ app.post("/reset-password", (req,res)=>{
 
         delete otpStore[email]
 
-        res.send("Password updated ✅")
+        res.send("Password updated ")
     })
 })
 

@@ -10,6 +10,17 @@ body {
     height: 100vh;
 }
 
+/* REMOVE NUMBER ARROWS */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
 /* CONTAINER */
 .container {
     width: 95%;
@@ -49,7 +60,6 @@ h1 {
 }
 
 .mode-title {
-    margin-bottom: 8px;
     font-size: 13px;
     color: #aaa;
 }
@@ -76,21 +86,27 @@ h1 {
 .room-card {
     background: rgba(255,255,255,0.05);
     padding: 10px;
-    border-radius: 10px;
-
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 /* INPUT */
 input {
-    padding: 8px;
-    border-radius: 8px;
-    border: none;
-    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    outline: none;
+    background: rgba(255,255,255,0.08);
     color: white;
     text-align: center;
+    transition: 0.2s;
+}
+
+input:focus {
+    border: 1px solid #a020f0;
+    box-shadow: 0 0 10px #a020f0;
 }
 
 /* BUTTON */
@@ -112,4 +128,97 @@ input {
 #msg {
     text-align: center;
     font-size: 13px;
+}
+body::before {
+    content: "";
+    position: fixed;
+    width: 300%;
+    height: 300%;
+    background-image:
+        radial-gradient(1px 1px at 10% 20%, white, transparent),
+        radial-gradient(1px 1px at 30% 80%, #ccc, transparent),
+        radial-gradient(1px 1px at 50% 50%, #aaa, transparent),
+        radial-gradient(1px 1px at 70% 30%, white, transparent),
+        radial-gradient(1px 1px at 90% 70%, #ddd, transparent),
+        radial-gradient(1px 1px at 20% 90%, #bbb, transparent),
+        radial-gradient(1px 1px at 80% 10%, #fff, transparent),
+        radial-gradient(1px 1px at 60% 40%, #ccc, transparent),
+        radial-gradient(1px 1px at 40% 70%, #eee, transparent),
+        radial-gradient(1px 1px at 75% 85%, #aaa, transparent);
+
+    animation: moveStars 200s linear infinite, twinkle 4s ease-in-out infinite;
+    z-index: -2;
+}
+
+/* 🌟 STAR LAYER 2 (bigger stars) */
+body::after {
+    content: "";
+    position: fixed;
+    width: 200%;
+    height: 200%;
+    background-image:
+        radial-gradient(2px 2px at 15% 30%, white, transparent),
+        radial-gradient(2px 2px at 45% 60%, #ccc, transparent),
+        radial-gradient(2px 2px at 75% 20%, #fff, transparent),
+        radial-gradient(2px 2px at 85% 75%, #ddd, transparent),
+        radial-gradient(2px 2px at 25% 85%, #bbb, transparent);
+
+    animation: moveStars 120s linear infinite reverse, twinkle 3s ease-in-out infinite;
+    z-index: -1;
+}
+
+/* 🌌 GALAXY GLOW */
+.container::before {
+    content: "";
+    position: fixed;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(160,32,240,0.35), transparent 70%);
+    top: -150px;
+    left: -150px;
+    filter: blur(140px);
+    z-index: -1;
+}
+
+/* 🚀 SHOOTING STARS */
+.shooting-star {
+    position: fixed;
+    width: 2px;
+    height: 80px;
+    background: linear-gradient(-45deg, white, transparent);
+    top: -100px;
+    left: random;
+    opacity: 0;
+    animation: shoot 6s linear infinite;
+}
+
+/* multiple shooting stars */
+.shooting-star:nth-child(1) { left: 20%; animation-delay: 2s; }
+.shooting-star:nth-child(2) { left: 50%; animation-delay: 5s; }
+.shooting-star:nth-child(3) { left: 80%; animation-delay: 8s; }
+
+@keyframes shoot {
+    0% {
+        transform: translateY(0) translateX(0) rotate(45deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(800px) translateX(-300px) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+/* ✨ TWINKLE */
+@keyframes twinkle {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.3; }
+}
+
+/* 🌠 STAR MOVEMENT */
+@keyframes moveStars {
+    from { transform: translateY(0); }
+    to { transform: translateY(-1500px); }
 }
