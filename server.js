@@ -334,7 +334,7 @@ app.get("/generate-seating", (req, res) => {
         db.query("SELECT * FROM classrooms", (err, rooms) => {
             if(err) return res.send("Room fetch error ❌")
 
-            // ✅ REMOVE DUPLICATES
+            // REMOVE DUPLICATES
             let seen = new Set()
             let students = studentsData.filter(s => {
                 let reg = s.regno.trim()
@@ -343,12 +343,11 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // 🔥 SORT
             students.sort((a,b)=> a.subject.localeCompare(b.subject))
 
             let allRooms = []
 
-            // ================= MAIN ROOMS =================
+            // ================= ROOMS =================
             rooms.forEach(room => {
 
                 let grid = Array.from({ length: room.row_count }, () =>
@@ -359,42 +358,30 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                let solved = solveSeating(grid, tempStudents, 0, {count:0})
+                // 🔁 TRY 3 TIMES STRICT
+                let solved = false
+                for(let i=0;i<3;i++){
+                    solved = solveSeating(grid, tempStudents, 0, {count:0}, false)
+                    if(solved) break
+                }
 
-                // fallback fill
+                // 🔥 FINAL TRY (ALLOW SAME SUBJECT)
                 if(!solved){
-                    for(let r=0; r<room.row_count; r++){
-    for(let c=0; c<room.col_count; c++){
-        for(let b=0; b<(room.bench || 1); b++){
+                    solved = solveSeating(grid, tempStudents, 0, {count:0}, true)
+                }
 
-            if(tempStudents.length === 0) break
+                // 🔥 FINAL FILL (NO EMPTY BENCH)
+                for(let r=0; r<room.row_count; r++){
+                    for(let c=0; c<room.col_count; c++){
+                        for(let b=0; b<(room.bench || 1); b++){
 
-            if(grid[r][c][b] === null){
+                            if(tempStudents.length === 0) break
 
-                let placed = false
-
-                for(let i=0; i<tempStudents.length; i++){
-                    let s = tempStudents[i]
-
-                    if(
-                        isDeptSafe(s, r, c, grid) &&
-                        isSubjectSafe(s, r, c, grid)
-                    ){
-                        grid[r][c][b] = s
-                        tempStudents.splice(i,1)
-                        placed = true
-                        break
+                            if(grid[r][c][b] === null){
+                                grid[r][c][b] = tempStudents.shift()
+                            }
+                        }
                     }
-                }
-
-                // ⚠️ last option (force fill)
-                if(!placed){
-                     continue;
-                }
-            }
-        }
-    }
-}
                 }
 
                 students = tempStudents
@@ -405,84 +392,44 @@ app.get("/generate-seating", (req, res) => {
                 })
             })
 
-            // ================= EXTRA ROOM =================
-            if(allowExtra && students.length > 0){
-
-                let extraRows = parseInt(req.query.rows) || 5
-                let extraCols = parseInt(req.query.cols) || 5
-                let extraBench = parseInt(req.query.bench) || 1
-
-                let extraGrid = Array.from({ length: extraRows }, () =>
-                    Array.from({ length: extraCols }, () =>
-                        Array(extraBench).fill(null)
-                    )
-                )
-
-                let tempStudents = [...students]
-
-                let solved = solveSeating(extraGrid, tempStudents, 0, {count:0})
-
-                if(!solved){
-                    for(let r=0; r<extraRows; r++){
-                        for(let c=0; c<extraCols; c++){
-                            for(let b=0; b<extraBench; b++){
-
-                                if(tempStudents.length === 0) break
-
-                                if(extraGrid[r][c][b] === null){
-                                    extraGrid[r][c][b] = tempStudents.shift()
-                                }
-                            }
-                        }
-                    }
-                }
-
-                students = tempStudents
-
-                allRooms.push({
-                    room: "Extra Room",
-                    layout: extraGrid
-                })
-            }
-
-            // ================= FORMAT + SUBJECT COUNT =================
+            // ================= SUBJECT MAP =================
             let clean = allRooms.map(room => {
 
-    let subjectMap = {}
+                let subjectMap = {}
 
-    room.layout.forEach(row => {
-        row.forEach(col => {
-            col.forEach(s => {
-                if(!s) return
+                room.layout.forEach(row => {
+                    row.forEach(col => {
+                        col.forEach(s => {
+                            if(!s) return
 
-                if(!subjectMap[s.subject]){
-                    subjectMap[s.subject] = {
-                        count: 0,
-                        students: []
-                    }
+                            if(!subjectMap[s.subject]){
+                                subjectMap[s.subject] = {
+                                    count: 0,
+                                    students: []
+                                }
+                            }
+
+                            subjectMap[s.subject].count++
+                            subjectMap[s.subject].students.push(s.regno)
+                        })
+                    })
+                })
+
+                return {
+                    room: room.room,
+                    subjectMap,   // ✅ for question paper
+                    layout: room.layout.map(row =>
+                        row.map(col =>
+                            col.map(s =>
+                                s
+                                ? `${s.name}\nReg: ${s.regno}\nDept: ${s.dept}\nSub: ${s.subject}`
+                                : "Empty"
+                            )
+                        )
+                    )
                 }
-
-                subjectMap[s.subject].count++
-                subjectMap[s.subject].students.push(s.regno)
             })
-        })
-    })
 
-    return {
-        room: room.room,
-        subjectSummary: subjectMap, // ✅ updated name
-        layout: room.layout.map(row =>
-            row.map(col =>
-                col.map(s =>
-                    s
-                    ? `${s.name}\nReg: ${s.regno}\nDept: ${s.dept}\nSub: ${s.subject}`
-                    : "Empty"
-                )
-            )
-        )
-    }
-})
-            // ================= FINAL =================
             let result = {
                 seating: clean,
                 unseated: students.map(s =>
@@ -501,6 +448,98 @@ app.get("/generate-seating", (req, res) => {
     })
 })
 
+
+// ================= SOLVER =================
+function solveSeating(grid, students, index = 0, attempts = {count:0}, allowSameSubject = false){
+
+    if(attempts.count++ > 50000) return false
+
+    let rows = grid.length
+    let cols = grid[0].length
+    let bench = grid[0][0].length
+
+    if(index === rows * cols * bench){
+        return true
+    }
+
+    let r = Math.floor(index / (cols * bench))
+    let c = Math.floor((index % (cols * bench)) / bench)
+    let b = index % bench
+
+    if(grid[r][c][b] !== null){
+        return solveSeating(grid, students, index + 1, attempts, allowSameSubject)
+    }
+
+    for(let i = 0; i < students.length; i++){
+
+        let s = students[i]
+
+        if((allowSameSubject || isSubjectSafe(s, r, c, grid)) && isDeptSafe(s, r, c, grid)){
+
+            grid[r][c][b] = s
+            students.splice(i, 1)
+
+            if(solveSeating(grid, students, index + 1, attempts, allowSameSubject)){
+                return true
+            }
+
+            grid[r][c][b] = null
+            students.splice(i, 0, s)
+        }
+    }
+
+    return false
+}
+
+
+// ================= RULES =================
+function isSubjectSafe(seat, r, c, grid){
+
+    if(grid[r][c]){
+        for(let n of grid[r][c]){
+            if(n && n.subject === seat.subject) return false
+        }
+    }
+
+    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
+
+    for(let d of dirs){
+        let nr = r + d[0]
+        let nc = c + d[1]
+
+        if(grid[nr] && grid[nr][nc]){
+            for(let n of grid[nr][nc]){
+                if(n && n.subject === seat.subject) return false
+            }
+        }
+    }
+
+    return true
+}
+
+function isDeptSafe(seat, r, c, grid){
+
+    if(grid[r][c]){
+        for(let n of grid[r][c]){
+            if(n && n.dept === seat.dept) return false
+        }
+    }
+
+    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
+
+    for(let d of dirs){
+        let nr = r + d[0]
+        let nc = c + d[1]
+
+        if(grid[nr] && grid[nr][nc]){
+            for(let n of grid[nr][nc]){
+                if(n && n.dept === seat.dept) return false
+            }
+        }
+    }
+
+    return true
+}
 
 // ================= FUNCTIONS =================
 function solveSeating(grid, students, index = 0, attempts = {count:0}){
