@@ -530,7 +530,7 @@ function placeStudent(grid, r, c, b, s){
 }
 function isValid(seat, r, c, grid){
 
-    // ✅ 1. CHECK SAME BENCH (VERY IMPORTANT)
+    // ✅ CHECK SAME BENCH FIRST
     if(grid[r][c]){
         for(let n of grid[r][c]){
             if(!n) continue
@@ -540,7 +540,7 @@ function isValid(seat, r, c, grid){
         }
     }
 
-    // ✅ 2. CHECK ADJACENT CELLS
+    // ✅ CHECK ADJACENT
     let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
 
     for(let d of dirs){
@@ -561,6 +561,13 @@ function isValid(seat, r, c, grid){
 }
 function isRelaxedValid(seat, r, c, grid){
 
+    // SAME BENCH CHECK (only subject)
+    if(grid[r][c]){
+        for(let n of grid[r][c]){
+            if(n && n.subject === seat.subject) return false
+        }
+    }
+
     let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
 
     for(let d of dirs){
@@ -576,19 +583,6 @@ function isRelaxedValid(seat, r, c, grid){
 
     return true
 }
-app.get("/seating-history", (req, res) => {
-
-    db.query("SELECT * FROM seating_history ORDER BY id DESC", (err, result) => {
-        if(err) return res.send("Error ❌")
-
-        let data = result.map(r => ({
-    id: r.id,
-    ...(typeof r.data === "string" ? JSON.parse(r.data) : r.data)
-}))
-
-        res.json(data)
-    })
-})
 app.delete("/delete-history/:id", (req, res) => {
 
     let id = req.params.id
