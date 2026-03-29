@@ -327,9 +327,6 @@ app.post("/upload-students", upload.fields([
 app.get("/generate-seating", (req, res) => {
 
     let allowExtra = req.query.extra === "true"
-    let extraRows = parseInt(req.query.rows) || 0
-    let extraCols = parseInt(req.query.cols) || 0
-    let extraBench = parseInt(req.query.bench) || 1
 
     db.query("SELECT * FROM students", (err, studentsData) => {
         if(err) return res.send("Student fetch error ❌")
@@ -346,17 +343,13 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // shuffle students
-            students.sort(() => Math.random() - 0.5)
+            // 🔥 SORT for better backtracking
+            students.sort((a,b)=> a.subject.localeCompare(b.subject))
 
             let allRooms = []
 
             // ================= MAIN ROOMS =================
             rooms.forEach(room => {
-
-                let allowed = room.allowed_depts
-                    ? JSON.parse(room.allowed_depts)
-                    : []
 
                 let grid = Array.from({ length: room.row_count }, () =>
                     Array.from({ length: room.col_count }, () =>
@@ -364,100 +357,51 @@ app.get("/generate-seating", (req, res) => {
                     )
                 )
 
-                for(let r=0; r<room.row_count; r++){
-    for(let c=0; c<room.col_count; c++){
-        for(let b=0; b<(room.bench || 1); b++){
+                let tempStudents = [...students]
 
-            let placed = false
+                solveSeating(grid, tempStudents)
 
-            // 1️⃣ STRICT (no same dept + subject)
-            for(let i=0; i<students.length; i++){
-                let s = students[i]
-
-                if(allowed.length > 0 && !allowed.includes(s.dept)){
-                    continue
-                }
-
-                if(isValid(s, r, c, grid)){
-                    placeStudent(grid, r, c, b, s)
-                    students.splice(i,1)
-                    placed = true
-                    break
-                }
-            }
-
-            // 2️⃣ RELAXED (only subject)
-            if(!placed){
-                for(let i=0; i<students.length; i++){
-                    let s = students[i]
-
-                    if(allowed.length > 0 && !allowed.includes(s.dept)){
-                        continue
-                    }
-
-                    if(isRelaxedValid(s, r, c, grid)){
-                        placeStudent(grid, r, c, b, s)
-                        students.splice(i,1)
-                        placed = true
-                        break
-                    }
-                }
-            }
-
-            
-            }
-        }
-    }
-
+                // remove placed students
+                students = students.filter(s =>
+                    tempStudents.find(ts => ts.regno === s.regno)
+                )
 
                 allRooms.push({
                     room: room.room_name,
-                    layout: grid,
-                    allowed_depts: allowed
+                    layout: grid
                 })
             })
 
             // ================= EXTRA ROOM =================
             if(allowExtra && students.length > 0){
 
-                if(extraRows === 0 || extraCols === 0){
-                    return res.send("Enter rows & cols for extra room ❌")
-                }
+                let extraRows = parseInt(req.query.rows) || 5
+                let extraCols = parseInt(req.query.cols) || 5
+                let extraBench = parseInt(req.query.bench) || 1
 
-                let grid = Array.from({ length: extraRows }, () =>
+                let extraGrid = Array.from({ length: extraRows }, () =>
                     Array.from({ length: extraCols }, () =>
                         Array(extraBench).fill(null)
                     )
                 )
 
-                for(let r=0; r<extraRows; r++){
-                    for(let c=0; c<extraCols; c++){
-                        for(let b=0; b<extraBench; b++){
+                let tempStudents = [...students]
 
-                            if(students.length === 0) break
+                solveSeating(extraGrid, tempStudents)
 
-                            let s = students.shift()
-
-                            grid[r][c][b] = {
-                                name: s.name,
-                                regno: s.regno,
-                                dept: s.dept,
-                                subject: s.subject
-                            }
-                        }
-                    }
-                }
+                students = students.filter(s =>
+                    tempStudents.find(ts => ts.regno === s.regno)
+                )
 
                 allRooms.push({
-                    room: "Extra",
-                    layout: grid
+                    room: "Extra Room",
+                    layout: extraGrid
                 })
             }
 
-            // ================= FORMAT OUTPUT =================
+            // ================= FORMAT =================
             let clean = allRooms.map(room => ({
                 room: room.room,
-                allowed_depts: room.allowed_depts || [],
                 layout: room.layout.map(row =>
                     row.map(col =>
                         col.map(s =>
@@ -469,41 +413,43 @@ app.get("/generate-seating", (req, res) => {
                 )
             }))
 
+            // ================= DEPT LIST =================
             let roomDeptList = allRooms.map(room => {
-    let deptMap = {}
+                let deptMap = {}
 
-    room.layout.forEach(row => {
-        row.forEach(col => {
-            col.forEach(s => {
-                if(!s) return
+                room.layout.forEach(row => {
+                    row.forEach(col => {
+                        col.forEach(s => {
+                            if(!s) return
 
-                if(!deptMap[s.dept]){
-                    deptMap[s.dept] = []
+                            if(!deptMap[s.dept]){
+                                deptMap[s.dept] = []
+                            }
+
+                            deptMap[s.dept].push(
+                                `${s.name} (${s.regno} - ${s.subject})`
+                            )
+                        })
+                    })
+                })
+
+                return {
+                    room: room.room,
+                    departments: deptMap
                 }
-
-                deptMap[s.dept].push(
-                    `${s.name} (${s.regno} - ${s.subject})`
-                )
             })
-        })
-    })
 
-    return {
-        room: room.room,
-        departments: deptMap
-    }
-})
             // ================= FINAL RESULT =================
-           let result = {
-    seating: clean,
-    unseated: students.map(s =>
-        `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
-    ),
-    roomDeptList, // ✅ ADD THIS
-    created_at: new Date()
-}
+            let result = {
+                seating: clean,
+                unseated: students.map(s =>
+                    `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
+                ),
+                roomDeptList,
+                created_at: new Date()
+            }
 
-            // SAVE HISTORY
+            // ✅ SAVE HISTORY
             db.query(
                 "INSERT INTO seating_history (data) VALUES (?)",
                 [JSON.stringify(result)]
@@ -516,49 +462,47 @@ app.get("/generate-seating", (req, res) => {
 
 
 // ================= FUNCTIONS =================
+function solveSeating(grid, students, index = 0){
 
-function placeStudent(grid, r, c, b, s){
-    grid[r][c][b] = {
-        name: s.name,
-        regno: s.regno,
-        dept: s.dept,
-        subject: s.subject
-    }
-}
-function isValid(seat, r, c, grid){
+    let rows = grid.length
+    let cols = grid[0].length
+    let bench = grid[0][0].length
 
-    // ✅ CHECK SAME BENCH FIRST
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(!n) continue
-
-            if(n.dept === seat.dept) return false
-            if(n.subject === seat.subject) return false
-        }
+    if(index === rows * cols * bench){
+        return true
     }
 
-    // ✅ CHECK ADJACENT
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
+    let r = Math.floor(index / (cols * bench))
+    let c = Math.floor((index % (cols * bench)) / bench)
+    let b = index % bench
 
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
+    if(grid[r][c][b] !== null){
+        return solveSeating(grid, students, index + 1)
+    }
 
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(!n) continue
+    for(let i = 0; i < students.length; i++){
 
-                if(n.dept === seat.dept) return false
-                if(n.subject === seat.subject) return false
+        let s = students[i]
+
+        if(isSubjectSafe(s, r, c, grid)){
+
+            grid[r][c][b] = s
+            students.splice(i, 1)
+
+            if(solveSeating(grid, students, index + 1)){
+                return true
             }
+
+            // backtrack
+            grid[r][c][b] = null
+            students.splice(i, 0, s)
         }
     }
 
-    return true
+    return false
 }
-function isRelaxedValid(seat, r, c, grid){
+function isSubjectSafe(seat, r, c, grid){
 
-    // SAME BENCH CHECK (only subject)
     if(grid[r][c]){
         for(let n of grid[r][c]){
             if(n && n.subject === seat.subject) return false
@@ -580,6 +524,40 @@ function isRelaxedValid(seat, r, c, grid){
 
     return true
 }
+function isDeptSafe(seat, r, c, grid){
+
+    // SAME BENCH
+    if(grid[r][c]){
+        for(let n of grid[r][c]){
+            if(n && n.dept === seat.dept) return false
+        }
+    }
+
+    // ADJACENT
+    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
+
+    for(let d of dirs){
+        let nr = r + d[0]
+        let nc = c + d[1]
+
+        if(grid[nr] && grid[nr][nc]){
+            for(let n of grid[nr][nc]){
+                if(n && n.dept === seat.dept) return false
+            }
+        }
+    }
+
+    return true
+}
+function placeStudent(grid, r, c, b, s){
+    grid[r][c][b] = {
+        name: s.name,
+        regno: s.regno,
+        dept: s.dept,
+        subject: s.subject
+    }
+}
+
 app.delete("/delete-history/:id", (req, res) => {
 
     let id = req.params.id
