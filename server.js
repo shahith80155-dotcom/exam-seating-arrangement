@@ -343,12 +343,12 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // sort by subject (helps distribution)
+            // SORT (important)
             students.sort((a,b)=> a.subject.localeCompare(b.subject))
 
             let allRooms = []
 
-            // ================= ROOMS =================
+            // ================= MAIN ROOMS =================
             rooms.forEach(room => {
 
                 let grid = Array.from({ length: room.row_count }, () =>
@@ -359,20 +359,9 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                let solved = false
+                solveSeating(grid, tempStudents, 0, {count:0})
 
-                // 🔁 TRY 3 TIMES STRICT
-                for(let i=0;i<3;i++){
-                    solved = solveSeating(grid, tempStudents, 0, {count:0}, false)
-                    if(solved) break
-                }
-
-                // 🔥 FINAL TRY (ALLOW SAME DEPT ONLY, NOT SUBJECT)
-                if(!solved){
-                    solved = solveSeating(grid, tempStudents, 0, {count:0}, true)
-                }
-
-                // 🔥 SAFE FALLBACK (NO SUBJECT BREAK)
+                // 🔥 SMART FILL (NO EMPTY BENCHES)
                 for(let r=0; r<room.row_count; r++){
                     for(let c=0; c<room.col_count; c++){
                         for(let b=0; b<(room.bench || 1); b++){
@@ -383,14 +372,11 @@ app.get("/generate-seating", (req, res) => {
 
                                 let placed = false
 
-                                // 1️⃣ strict (subject + dept)
+                                // 1️⃣ STRICT (subject + dept)
                                 for(let i=0; i<tempStudents.length; i++){
                                     let s = tempStudents[i]
 
-                                    if(
-                                        isSubjectSafe(s, r, c, grid) &&
-                                        isDeptSafe(s, r, c, grid)
-                                    ){
+                                    if(isSubjectSafe(s,r,c,grid) && isDeptSafe(s,r,c,grid)){
                                         grid[r][c][b] = s
                                         tempStudents.splice(i,1)
                                         placed = true
@@ -398,12 +384,12 @@ app.get("/generate-seating", (req, res) => {
                                     }
                                 }
 
-                                // 2️⃣ relax dept only (SUBJECT STILL STRICT)
+                                // 2️⃣ RELAX DEPT
                                 if(!placed){
                                     for(let i=0; i<tempStudents.length; i++){
                                         let s = tempStudents[i]
 
-                                        if(isSubjectSafe(s, r, c, grid)){
+                                        if(isSubjectSafe(s,r,c,grid)){
                                             grid[r][c][b] = s
                                             tempStudents.splice(i,1)
                                             placed = true
@@ -412,7 +398,18 @@ app.get("/generate-seating", (req, res) => {
                                     }
                                 }
 
-                                // ❌ NO FORCE FILL → keep empty if needed
+                                // 3️⃣ FINAL (ANY but STILL NO SAME SUBJECT)
+                                if(!placed){
+                                    for(let i=0; i<tempStudents.length; i++){
+                                        let s = tempStudents[i]
+
+                                        if(isSubjectSafe(s,r,c,grid)){
+                                            grid[r][c][b] = s
+                                            tempStudents.splice(i,1)
+                                            break
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -426,7 +423,55 @@ app.get("/generate-seating", (req, res) => {
                 })
             })
 
-            // ================= SUBJECT MAP =================
+            // ================= EXTRA ROOM =================
+            if(allowExtra && students.length > 0){
+
+                let rows = parseInt(req.query.rows) || 5
+                let cols = parseInt(req.query.cols) || 5
+                let bench = parseInt(req.query.bench) || 1
+
+                let grid = Array.from({ length: rows }, () =>
+                    Array.from({ length: cols }, () =>
+                        Array(bench).fill(null)
+                    )
+                )
+
+                let tempStudents = [...students]
+
+                solveSeating(grid, tempStudents, 0, {count:0})
+
+                // fill remaining
+                for(let r=0; r<rows; r++){
+                    for(let c=0; c<cols; c++){
+                        for(let b=0; b<bench; b++){
+
+                            if(tempStudents.length === 0) break
+
+                            if(grid[r][c][b] === null){
+
+                                for(let i=0; i<tempStudents.length; i++){
+                                    let s = tempStudents[i]
+
+                                    if(isSubjectSafe(s,r,c,grid)){
+                                        grid[r][c][b] = s
+                                        tempStudents.splice(i,1)
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                students = tempStudents
+
+                allRooms.push({
+                    room: "Extra Room",
+                    layout: grid
+                })
+            }
+
+            // ================= FORMAT + SUBJECT MAP =================
             let clean = allRooms.map(room => {
 
                 let subjectMap = {}
