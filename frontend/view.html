@@ -18,7 +18,7 @@
 
 <div id="container"></div>
 
-<button class="back-btn" onclick="window.location.href='../dashboard.html'">
+<button class="back-btn" onclick="window.location.href='dashboard.html'">
     ← Back
 </button>
 
@@ -39,6 +39,9 @@ else {
         title.innerText = "Room " + room.room
         container.appendChild(title)
 
+        // ✅ SUBJECT COUNTER
+        let subjectCount = {}
+
         room.layout.forEach(row => {
 
             let rowDiv = document.createElement("div")
@@ -49,17 +52,43 @@ else {
                 let benchDiv = document.createElement("div")
                 benchDiv.className = "bench"
 
-                benchDiv.innerHTML = col.map(s =>
-                    s === "Empty"
-                    ? "Empty"
-                    : s.replace(/\n/g, "<br>")
-                ).join("<hr>")
+                benchDiv.innerHTML = col.map(s => {
+
+                    if(s === "Empty") return "Empty"
+
+                    // ✅ EXTRACT SUBJECT FROM "Sub: CS101"
+                    let match = s.match(/Sub:\s*(\w+)/)
+
+                    if(match){
+                        let subject = match[1]
+                        subjectCount[subject] = (subjectCount[subject] || 0) + 1
+                    }
+
+                    return s.replace(/\n/g, "<br>")
+
+                }).join("<hr>")
 
                 rowDiv.appendChild(benchDiv)
             })
 
             container.appendChild(rowDiv)
         })
+
+        // ✅ DISPLAY SUBJECT COUNT
+        let box = document.createElement("div")
+        box.className = "subject-box"
+
+        let heading = document.createElement("h3")
+        heading.innerText = "📊 Subject Count"
+        box.appendChild(heading)
+
+        for(let sub in subjectCount){
+            let p = document.createElement("p")
+            p.innerText = sub + " → " + subjectCount[sub]
+            box.appendChild(p)
+        }
+
+        container.appendChild(box)
     })
 
     // UNSEATED

@@ -6,6 +6,7 @@
 </head>
 
 <body>
+
 <div class="shooting-star"></div>
 <div class="shooting-star"></div>
 <div class="shooting-star"></div>
@@ -39,19 +40,22 @@
 
     <p id="msg"></p>
 
-    <!-- ✅ BACK BUTTON -->
     <button class="back-btn" onclick="goBack()">← Back to Dashboard</button>
 
 </div>
 
 <script>
+
+// ✅ LOGIN CHECK
 let user = localStorage.getItem("user")
 if(!user) window.location.href = "login.html"
 
+// ✅ BACK
 function goBack(){
     window.location.href = "dashboard.html"
 }
 
+// ✅ DELETE
 function deleteAllClassrooms(){
     fetch("https://exam-seating-arrangement-k7ln.onrender.com/delete-all-classrooms", {
         method: "DELETE"
@@ -63,6 +67,7 @@ function deleteAllClassrooms(){
     })
 }
 
+// ✅ GENERATE ROOMS
 function generateRooms(){
 
     let count = document.getElementById("roomCount").value
@@ -88,28 +93,31 @@ function generateRooms(){
 
             ${mode === "dept" ? `
             <div class="dept">
-                <label class="chip">
-                    <input type="checkbox" class="dept${i}" value="CSE">
-                    <span>CSE</span>
-                </label>
-                <label class="chip">
-                    <input type="checkbox" class="dept${i}" value="IT">
-                    <span>IT</span>
-                </label>
-                <label class="chip">
-                    <input type="checkbox" class="dept${i}" value="ECE">
-                    <span>ECE</span>
-                </label>
-                <label class="chip">
-                    <input type="checkbox" class="dept${i}" value="MECH">
-                    <span>MECH</span>
-                </label>
+
+                ${createChip(i, "CSE")}
+                ${createChip(i, "IT")}
+                ${createChip(i, "ECE")}
+                ${createChip(i, "MECH")}
+                ${createChip(i, "CIVIL")}
+                ${createChip(i, "EEE")}
+
             </div>
             ` : ""}
         </div>`
     }
 }
 
+// ✅ CHIP GENERATOR (cleaner)
+function createChip(i, name){
+    return `
+    <label class="chip">
+        <input type="checkbox" class="dept${i}" value="${name}">
+        <span>${name}</span>
+    </label>
+    `
+}
+
+// ✅ SAVE
 function saveDetails(){
 
     let count = document.getElementById("roomCount").value
@@ -168,6 +176,7 @@ function saveDetails(){
         msg.style.color = "green"
     })
 }
+
 </script>
 
 </body>

@@ -266,3 +266,35 @@ button.danger {
     transform: scale(1.05);
     background: linear-gradient(90deg, #666, #aaa);
 }
+.dept {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.chip {
+    background: rgba(255,255,255,0.08);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.3s;
+}
+
+.chip input {
+    display: none;
+}
+
+.chip span {
+    color: #ccc;
+}
+
+.chip input:checked + span {
+    color: white;
+    font-weight: bold;
+}
+
+.chip:has(input:checked) {
+    background: linear-gradient(45deg, #ff00cc, #3333ff);
+}

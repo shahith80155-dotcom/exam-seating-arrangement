@@ -37,12 +37,16 @@
 
     <p id="msg"></p>
 
-    <!-- ✅ BACK BUTTON -->
+    <!-- BACK BUTTON -->
     <button class="back-btn" onclick="goDashboard()">← Back to Dashboard</button>
 
 </div>
 
 <script>
+
+// 🔐 Protect page (keep this)
+let user = localStorage.getItem("user")
+if(!user) window.location.href = "login.html"
 
 // SHOW / HIDE EXTRA INPUTS
 document.getElementById("extraRoom").addEventListener("change", function () {
@@ -86,7 +90,9 @@ function generateSeating() {
     .then(res => res.json())
     .then(data => {
 
-        localStorage.clear()
+        // ✅ FIX: DO NOT CLEAR USER
+        localStorage.removeItem("seating")
+
         localStorage.setItem("seating", JSON.stringify(data))
 
         msg.innerText = "Seating generated successfully ✅"
@@ -105,7 +111,7 @@ function goToView(){
 
 // BACK TO DASHBOARD
 function goDashboard(){
-    window.location.href = "dashboard.html"
+    window.location.href = "/dashboard.html"
 }
 
 </script>
