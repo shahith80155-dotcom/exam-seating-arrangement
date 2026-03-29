@@ -7,129 +7,161 @@
 
 <body>
 
-<!-- 🌠 Shooting Stars -->
-<div class="shooting-star"></div>
-<div class="shooting-star"></div>
-<div class="shooting-star"></div>
-
 <div class="container">
 
-    <h1>Generate Seating ⚙️</h1>
-    <p class="subtitle">Create seating arrangement easily</p>
+    <h1>⚙️ Generate Seating</h1>
+    <p class="subtitle">Smart exam seating system</p>
 
-    <!-- EXTRA ROOM -->
-    <label class="checkbox-container">
-        <input type="checkbox" id="extraRoom">
-        <span class="checkmark"></span>
-        <span class="label-text">Add Extra Room</span>
-    </label>
+    <div class="card">
 
-    <!-- STRICT MODE -->
-    <label class="checkbox-container">
-        <input type="checkbox" id="strictMode">
-        <span class="checkmark"></span>
-        <span class="label-text">Strict Mode (No same subject adjacent)</span>
-    </label>
+        <!-- MODE -->
+        <div class="mode-box">
+            <p class="mode-title">Select Mode</p>
 
-    <!-- INFO TEXT -->
-    <p style="font-size:12px;color:gray;">
-        Normal mode may place same subject students together
-    </p>
+            <label class="radio">
+                <input type="radio" name="mode" value="normal" checked>
+                <span>Normal Mode</span>
+            </label>
 
-    <!-- Extra Inputs -->
-    <div id="extraInputs" class="extra-box" style="display:none;">
-        <input type="number" id="extraRows" placeholder="Rows" min="1">
-        <input type="number" id="extraCols" placeholder="Columns" min="1">
-        <input type="number" id="extraBench" placeholder="Bench" value="1" min="1">
+            <label class="radio">
+                <input type="radio" name="mode" value="strict">
+                <span>Strict Mode</span>
+            </label>
+        </div>
+
+        <!-- INFO -->
+        <div class="info-box">
+            <p>✔ Normal → same subject CAN sit together</p>
+            <p>✔ Strict → no same subject adjacent (may leave empty seats)</p>
+        </div>
+
+        <!-- EXTRA ROOMS -->
+        <label class="option">
+            <input type="checkbox" id="extraRoom">
+            Add Extra Rooms
+        </label>
+
+        <div id="extraInputs" class="extra-box">
+
+            <input type="number" id="roomCount" placeholder="Number of Rooms" min="1">
+
+            <div id="roomFields"></div>
+
+        </div>
+
+        <!-- BUTTON -->
+        <button class="btn" onclick="generateSeating()">Generate Seating</button>
+        <button class="btn secondary" onclick="goToView()">View Seating</button>
+
+        <p id="msg"></p>
+
     </div>
-
-    <!-- Buttons -->
-    <button onclick="generateSeating()">Generate Seating</button>
-    <button onclick="goToView()" class="view-btn">View Seating</button>
-
-    <p id="msg"></p>
-
-    <!-- BACK BUTTON -->
-    <button class="back-btn" onclick="goDashboard()">← Back to Dashboard</button>
 
 </div>
 
 <script>
 
-// 🔐 Protect page
+// 🔐 Auth check
 let user = localStorage.getItem("user")
 if(!user) window.location.href = "login.html"
 
-// SHOW / HIDE EXTRA INPUTS
+// SHOW EXTRA INPUTS
 document.getElementById("extraRoom").addEventListener("change", function () {
-    let box = document.getElementById("extraInputs")
-    box.style.display = this.checked ? "flex" : "none"
+    document.getElementById("extraInputs").style.display =
+        this.checked ? "flex" : "none"
 })
 
-// GENERATE FUNCTION
-function generateSeating() {
+// CREATE ROOM INPUTS
+document.getElementById("roomCount").addEventListener("input", function(){
 
-    let allowExtra = document.getElementById("extraRoom").checked
-    let strictMode = document.getElementById("strictMode").checked
+    let count = this.value
+    let container = document.getElementById("roomFields")
+
+    container.innerHTML = ""
+
+    for(let i = 1; i <= count; i++){
+
+        container.innerHTML += `
+            <div class="room-card">
+                <input type="text" placeholder="Room ${i} Name" id="roomName${i}">
+                <input type="number" placeholder="Rows" id="rows${i}">
+                <input type="number" placeholder="Cols" id="cols${i}">
+                <input type="number" placeholder="Bench" id="bench${i}" value="1">
+            </div>
+        `
+    }
+})
+
+// MAIN FUNCTION
+function generateSeating(){
+
     let msg = document.getElementById("msg")
+    let allowExtra = document.getElementById("extraRoom").checked
+    let mode = document.querySelector('input[name="mode"]:checked').value
+    let strict = mode === "strict"
 
-    // ✅ CONFIRMATION FOR NORMAL MODE
-    if(!strictMode){
-        let confirmNormal = confirm(
-            "Normal Mode:\nSame subject students MAY sit adjacent.\n\nDo you want to continue?"
-        )
-
-        if(!confirmNormal){
-            return
-        }
-    }
-
-    // API URL
-    let url = `https://exam-seating-arrangement-k7ln.onrender.com/generate-seating?extra=${allowExtra}&strict=${strictMode}`
-
-    // EXTRA ROOM VALIDATION
-    if (allowExtra) {
-
-        let rows = document.getElementById("extraRows").value
-        let cols = document.getElementById("extraCols").value
-        let bench = document.getElementById("extraBench").value || 1
-
-        if (!rows || !cols) {
-            msg.innerText = "Enter rows and columns ❌"
-            msg.style.color = "red"
-            return
-        }
-
-        if (rows <= 0 || cols <= 0 || bench <= 0) {
-            msg.innerText = "Values must be greater than 0 ❌"
-            msg.style.color = "red"
-            return
-        }
-
-        url += `&rows=${rows}&cols=${cols}&bench=${bench}`
-    }
-
-    msg.innerText = "Generating seating..."
+    msg.innerText = "Generating..."
     msg.style.color = "white"
 
-    fetch(url)
+    let extraRooms = []
+
+    if(allowExtra){
+
+        let count = document.getElementById("roomCount").value
+
+        if(!count){
+            msg.innerText = "Enter number of rooms ❌"
+            msg.style.color = "red"
+            return
+        }
+
+        for(let i = 1; i <= count; i++){
+
+            let name = document.getElementById(`roomName${i}`).value
+            let rows = document.getElementById(`rows${i}`).value
+            let cols = document.getElementById(`cols${i}`).value
+            let bench = document.getElementById(`bench${i}`).value || 1
+
+            if(!name || !rows || !cols){
+                msg.innerText = `Fill all fields for Room ${i} ❌`
+                msg.style.color = "red"
+                return
+            }
+
+            extraRooms.push({
+                room_name: name,
+                row_count: parseInt(rows),
+                col_count: parseInt(cols),
+                bench: parseInt(bench)
+            })
+        }
+    }
+
+    fetch("https://exam-seating-arrangement-k7ln.onrender.com/generate-seating", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            strict,
+            extraRooms
+        })
+    })
     .then(res => res.json())
     .then(data => {
 
-        localStorage.removeItem("seating")
         localStorage.setItem("seating", JSON.stringify(data))
 
-        // MODE MESSAGE
-        if(data.mode === "STRICT"){
-            msg.innerText = "Strict mode applied ⚠️ Some seats may be empty"
+        if(strict){
+            msg.innerText = "Strict mode applied ⚠️ (some seats may be empty)"
             msg.style.color = "orange"
-        }else{
-            msg.innerText = "Seating generated successfully ✅ (All seats filled)"
+        } else {
+            msg.innerText = "Normal mode applied ✅"
             msg.style.color = "lightgreen"
         }
     })
     .catch(() => {
-        msg.innerText = "Error generating seating ❌"
+        msg.innerText = "Error generating ❌"
         msg.style.color = "red"
     })
 }
@@ -137,11 +169,6 @@ function generateSeating() {
 // VIEW PAGE
 function goToView(){
     window.location.href = "view.html"
-}
-
-// BACK TO DASHBOARD
-function goDashboard(){
-    window.location.href = "/dashboard.html"
 }
 
 </script>

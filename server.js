@@ -326,7 +326,6 @@ app.post("/upload-students", upload.fields([
 ========================= */
 app.get("/generate-seating", (req, res) => {
 
-    // ✅ GET MODE FROM FRONTEND
     let strictMode = req.query.strict === "true"
 
     db.query("SELECT * FROM students", (err, studentsData) => {
@@ -335,7 +334,7 @@ app.get("/generate-seating", (req, res) => {
         db.query("SELECT * FROM classrooms", (err, rooms) => {
             if(err) return res.send("Room fetch error ❌")
 
-            // ✅ REMOVE DUPLICATES
+            // ================= REMOVE DUPLICATES =================
             let seen = new Set()
             let students = studentsData.filter(s => {
                 let reg = s.regno.trim()
@@ -344,12 +343,12 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // ✅ SORT (important for distribution)
+            // SORT
             students.sort((a,b)=> a.subject.localeCompare(b.subject))
 
             let allRooms = []
 
-            // ================= ROOMS =================
+            // ================= MAIN ROOMS =================
             rooms.forEach(room => {
 
                 let grid = Array.from({ length: room.row_count }, () =>
@@ -360,57 +359,10 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                // ✅ TRY STRICT BACKTRACK
                 solveSeating(grid, tempStudents, 0, {count:0}, strictMode)
 
-                // ✅ FINAL FILL (NO EMPTY SEATS IN RELAX MODE)
-                for(let r=0; r<room.row_count; r++){
-                    for(let c=0; c<room.col_count; c++){
-                        for(let b=0; b<(room.bench || 1); b++){
-
-                            if(tempStudents.length === 0) break
-
-                            if(grid[r][c][b] === null){
-
-                                let placed = false
-
-                                // 1️⃣ STRICT RULES
-                                for(let i=0; i<tempStudents.length; i++){
-                                    let s = tempStudents[i]
-
-                                    if(
-                                        isSubjectSafe(s,r,c,grid,strictMode) &&
-                                        isDeptSafe(s,r,c,grid,strictMode)
-                                    ){
-                                        grid[r][c][b] = s
-                                        tempStudents.splice(i,1)
-                                        placed = true
-                                        break
-                                    }
-                                }
-
-                                // 2️⃣ RELAX DEPT
-                                if(!placed){
-                                    for(let i=0; i<tempStudents.length; i++){
-                                        let s = tempStudents[i]
-
-                                        if(isSubjectSafe(s,r,c,grid,strictMode)){
-                                            grid[r][c][b] = s
-                                            tempStudents.splice(i,1)
-                                            placed = true
-                                            break
-                                        }
-                                    }
-                                }
-
-                                // 3️⃣ FORCE FILL (ONLY RELAX MODE)
-                                if(!placed && !strictMode){
-                                    grid[r][c][b] = tempStudents.shift()
-                                }
-                            }
-                        }
-                    }
-                }
+                // 🔥 FINAL FILL
+                fillRemaining(grid, tempStudents, strictMode)
 
                 students = tempStudents
 
@@ -420,10 +372,44 @@ app.get("/generate-seating", (req, res) => {
                 })
             })
 
-            // ================= FORMAT =================
+            // ================= EXTRA ROOMS =================
+            if(req.query.extra === "true" && students.length > 0){
+
+                let extraCount = parseInt(req.query.extraCount) || 1
+                let extraNames = (req.query.extraNames || "").split(",")
+
+                let extraRows = parseInt(req.query.rows) || 5
+                let extraCols = parseInt(req.query.cols) || 5
+                let extraBench = parseInt(req.query.bench) || 1
+
+                for(let x = 0; x < extraCount; x++){
+
+                    if(students.length === 0) break
+
+                    let extraGrid = Array.from({ length: extraRows }, () =>
+                        Array.from({ length: extraCols }, () =>
+                            Array(extraBench).fill(null)
+                        )
+                    )
+
+                    let tempStudents = [...students]
+
+                    solveSeating(extraGrid, tempStudents, 0, {count:0}, strictMode)
+
+                    fillRemaining(extraGrid, tempStudents, strictMode)
+
+                    students = tempStudents
+
+                    allRooms.push({
+                        room: extraNames[x] || `Extra Room ${x+1}`,
+                        layout: extraGrid
+                    })
+                }
+            }
+
+            // ================= FORMAT + SUBJECT MAP =================
             let clean = allRooms.map(room => {
 
-                // ✅ SUBJECT MAP (for question paper)
                 let subjectMap = {}
 
                 room.layout.forEach(row => {
@@ -446,7 +432,7 @@ app.get("/generate-seating", (req, res) => {
 
                 return {
                     room: room.room,
-                    subjectMap, // ✅ IMPORTANT OUTPUT
+                    subjectMap,
                     layout: room.layout.map(row =>
                         row.map(col =>
                             col.map(s =>
@@ -459,13 +445,13 @@ app.get("/generate-seating", (req, res) => {
                 }
             })
 
-            // ✅ FINAL RESPONSE
+            // ================= FINAL RESULT =================
             let result = {
+                mode: strictMode ? "STRICT" : "NORMAL",
                 seating: clean,
                 unseated: students.map(s =>
-                    `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
+                    `${s.name} (${s.regno} - ${s.subject})`
                 ),
-                mode: strictMode ? "STRICT" : "RELAXED",
                 created_at: new Date()
             }
 
@@ -478,54 +464,52 @@ app.get("/generate-seating", (req, res) => {
         })
     })
 })
-
-
 // ================= SOLVER =================
-function solveSeating(grid, students, index=0, attempts={count:0}, strictMode){
+function solveSeating(grid, students, index = 0, attempts = {count:0}, strictMode){
 
-    if(attempts.count++ > 100000) return false
+    if(attempts.count++ > 50000) return false
 
     let rows = grid.length
     let cols = grid[0].length
     let bench = grid[0][0].length
 
-    if(index === rows * cols * bench) return true
+    if(index === rows * cols * bench){
+        return true
+    }
 
     let r = Math.floor(index / (cols * bench))
     let c = Math.floor((index % (cols * bench)) / bench)
     let b = index % bench
 
     if(grid[r][c][b] !== null){
-        return solveSeating(grid, students, index+1, attempts, strictMode)
+        return solveSeating(grid, students, index + 1, attempts, strictMode)
     }
 
-    for(let i=0; i<students.length; i++){
+    for(let i = 0; i < students.length; i++){
 
         let s = students[i]
 
         if(
-            isSubjectSafe(s,r,c,grid,strictMode) &&
-            isDeptSafe(s,r,c,grid,strictMode)
+            isDeptSafe(s, r, c, grid, strictMode) &&
+            isSubjectSafe(s, r, c, grid, strictMode)
         ){
             grid[r][c][b] = s
-            students.splice(i,1)
+            students.splice(i, 1)
 
-            if(solveSeating(grid, students, index+1, attempts, strictMode)){
+            if(solveSeating(grid, students, index + 1, attempts, strictMode)){
                 return true
             }
 
             grid[r][c][b] = null
-            students.splice(i,0,s)
+            students.splice(i, 0, s)
         }
     }
 
     return false
 }
-
-// ================= RULES =================
 function isSubjectSafe(seat, r, c, grid, strictMode){
 
-    if(!strictMode) return true
+    if(!strictMode) return true  // NORMAL MODE → allow same subject
 
     let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
 
@@ -545,7 +529,7 @@ function isSubjectSafe(seat, r, c, grid, strictMode){
 
 function isDeptSafe(seat, r, c, grid, strictMode){
 
-    if(!strictMode) return true
+    if(!strictMode) return true  // NORMAL MODE → allow same dept
 
     let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
 
@@ -562,210 +546,59 @@ function isDeptSafe(seat, r, c, grid, strictMode){
 
     return true
 }
-
-function isDeptSafe(seat, r, c, grid){
-
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(n && n.dept === seat.dept) return false
-        }
-    }
-
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
-
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
-
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(n && n.dept === seat.dept) return false
-            }
-        }
-    }
-
-    return true
-}
-
-// ================= SOLVER =================
-function solveSeating(grid, students, index = 0, attempts = {count:0}, allowSameSubject = false){
-
-    if(attempts.count++ > 50000) return false
+function fillRemaining(grid, students, strictMode){
 
     let rows = grid.length
     let cols = grid[0].length
     let bench = grid[0][0].length
 
-    if(index === rows * cols * bench){
-        return true
-    }
+    for(let r=0; r<rows; r++){
+        for(let c=0; c<cols; c++){
+            for(let b=0; b<bench; b++){
 
-    let r = Math.floor(index / (cols * bench))
-    let c = Math.floor((index % (cols * bench)) / bench)
-    let b = index % bench
+                if(students.length === 0) return
 
-    if(grid[r][c][b] !== null){
-        return solveSeating(grid, students, index + 1, attempts, allowSameSubject)
-    }
+                if(grid[r][c][b] === null){
 
-    for(let i = 0; i < students.length; i++){
+                    let placed = false
 
-        let s = students[i]
+                    // STRICT TRY
+                    for(let i=0; i<students.length; i++){
+                        let s = students[i]
 
-        if((allowSameSubject || isSubjectSafe(s, r, c, grid)) && isDeptSafe(s, r, c, grid)){
+                        if(
+                            isDeptSafe(s,r,c,grid,strictMode) &&
+                            isSubjectSafe(s,r,c,grid,strictMode)
+                        ){
+                            grid[r][c][b] = s
+                            students.splice(i,1)
+                            placed = true
+                            break
+                        }
+                    }
 
-            grid[r][c][b] = s
-            students.splice(i, 1)
+                    // RELAX SUBJECT ONLY
+                    if(!placed){
+                        for(let i=0; i<students.length; i++){
+                            let s = students[i]
 
-            if(solveSeating(grid, students, index + 1, attempts, allowSameSubject)){
-                return true
-            }
+                            if(isSubjectSafe(s,r,c,grid,false)){
+                                grid[r][c][b] = s
+                                students.splice(i,1)
+                                placed = true
+                                break
+                            }
+                        }
+                    }
 
-            grid[r][c][b] = null
-            students.splice(i, 0, s)
-        }
-    }
-
-    return false
-}
-
-
-// ================= RULES =================
-function isSubjectSafe(seat, r, c, grid){
-
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(n && n.subject === seat.subject) return false
-        }
-    }
-
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
-
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
-
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(n && n.subject === seat.subject) return false
+                    // FORCE FILL (NO EMPTY SEATS)
+                    if(!placed){
+                        grid[r][c][b] = students.shift()
+                    }
+                }
             }
         }
     }
-
-    return true
-}
-
-function isDeptSafe(seat, r, c, grid){
-
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(n && n.dept === seat.dept) return false
-        }
-    }
-
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
-
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
-
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(n && n.dept === seat.dept) return false
-            }
-        }
-    }
-
-    return true
-}
-
-// ================= FUNCTIONS =================
-function solveSeating(grid, students, index = 0, attempts = {count:0}){
-
-    if(attempts.count++ > 50000) return false  // 🔥 LIMIT
-
-    let rows = grid.length
-    let cols = grid[0].length
-    let bench = grid[0][0].length
-
-    if(index === rows * cols * bench){
-        return true
-    }
-
-    let r = Math.floor(index / (cols * bench))
-    let c = Math.floor((index % (cols * bench)) / bench)
-    let b = index % bench
-if(grid[r][c][b] !== null){
-    return solveSeating(grid, students, index + 1, attempts)
-}
-    for(let i = 0; i < students.length; i++){
-
-        let s = students[i]
-
-        if(isSubjectSafe(s, r, c, grid)&&isDeptSafe(s, r, c, grid)){
-
-            grid[r][c][b] = s
-            students.splice(i, 1)
-
-            if(solveSeating(grid, students, index + 1, attempts)){
-                return true
-            }
-
-            // backtrack
-            grid[r][c][b] = null
-            students.splice(i, 0, s)
-        }
-    }
-
-    return false
-}
-function isSubjectSafe(seat, r, c, grid){
-
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(n && n.subject === seat.subject) return false
-        }
-    }
-
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
-
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
-
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(n && n.subject === seat.subject) return false
-            }
-        }
-    }
-
-    return true
-}
-function isDeptSafe(seat, r, c, grid){
-
-    // SAME BENCH
-    if(grid[r][c]){
-        for(let n of grid[r][c]){
-            if(n && n.dept === seat.dept) return false
-        }
-    }
-
-    // ADJACENT
-    let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
-
-    for(let d of dirs){
-        let nr = r + d[0]
-        let nc = c + d[1]
-
-        if(grid[nr] && grid[nr][nc]){
-            for(let n of grid[nr][nc]){
-                if(n && n.dept === seat.dept) return false
-            }
-        }
-    }
-
-    return true
 }
 function placeStudent(grid, r, c, b, s){
     grid[r][c][b] = {
