@@ -364,17 +364,37 @@ app.get("/generate-seating", (req, res) => {
                 // fallback fill
                 if(!solved){
                     for(let r=0; r<room.row_count; r++){
-                        for(let c=0; c<room.col_count; c++){
-                            for(let b=0; b<(room.bench || 1); b++){
+    for(let c=0; c<room.col_count; c++){
+        for(let b=0; b<(room.bench || 1); b++){
 
-                                if(tempStudents.length === 0) break
+            if(tempStudents.length === 0) break
 
-                                if(grid[r][c][b] === null){
-                                    grid[r][c][b] = tempStudents.shift()
-                                }
-                            }
-                        }
+            if(grid[r][c][b] === null){
+
+                let placed = false
+
+                for(let i=0; i<tempStudents.length; i++){
+                    let s = tempStudents[i]
+
+                    if(
+                        isDeptSafe(s, r, c, grid) &&
+                        isSubjectSafe(s, r, c, grid)
+                    ){
+                        grid[r][c][b] = s
+                        tempStudents.splice(i,1)
+                        placed = true
+                        break
                     }
+                }
+
+                // ⚠️ last option (force fill)
+                if(!placed){
+                     continue;
+                }
+            }
+        }
+    }
+}
                 }
 
                 students = tempStudents
