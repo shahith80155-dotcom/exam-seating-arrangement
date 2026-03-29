@@ -530,6 +530,17 @@ function placeStudent(grid, r, c, b, s){
 }
 function isValid(seat, r, c, grid){
 
+    // ✅ 1. CHECK SAME BENCH (VERY IMPORTANT)
+    if(grid[r][c]){
+        for(let n of grid[r][c]){
+            if(!n) continue
+
+            if(n.dept === seat.dept) return false
+            if(n.subject === seat.subject) return false
+        }
+    }
+
+    // ✅ 2. CHECK ADJACENT CELLS
     let dirs = [[0,-1],[0,1],[-1,0],[1,0]]
 
     for(let d of dirs){
@@ -540,8 +551,8 @@ function isValid(seat, r, c, grid){
             for(let n of grid[nr][nc]){
                 if(!n) continue
 
-                if(n.subject === seat.subject) return false
                 if(n.dept === seat.dept) return false
+                if(n.subject === seat.subject) return false
             }
         }
     }
