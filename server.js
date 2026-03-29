@@ -343,7 +343,7 @@ app.get("/generate-seating", (req, res) => {
                 return true
             })
 
-            // 🔥 SORT for better backtracking
+            // 🔥 SORT
             students.sort((a,b)=> a.subject.localeCompare(b.subject))
 
             let allRooms = []
@@ -359,9 +359,24 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-                solveSeating(grid, tempStudents, 0, {count:0})
+                let solved = solveSeating(grid, tempStudents, 0, {count:0})
 
-                // remove placed students
+                // fallback fill
+                if(!solved){
+                    for(let r=0; r<room.row_count; r++){
+                        for(let c=0; c<room.col_count; c++){
+                            for(let b=0; b<(room.bench || 1); b++){
+
+                                if(tempStudents.length === 0) break
+
+                                if(grid[r][c][b] === null){
+                                    grid[r][c][b] = tempStudents.shift()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 students = tempStudents
 
                 allRooms.push({
@@ -385,80 +400,77 @@ app.get("/generate-seating", (req, res) => {
 
                 let tempStudents = [...students]
 
-if(!solveSeating(extraGrid, tempStudents, 0, {count:0})){
-    // 🔥 fallback fill
-    for(let r=0; r<extraRows; r++){
-        for(let c=0; c<extraCols; c++){
-            for(let b=0; b<extraBench; b++){
+                let solved = solveSeating(extraGrid, tempStudents, 0, {count:0})
 
-                if(tempStudents.length === 0) break
+                if(!solved){
+                    for(let r=0; r<extraRows; r++){
+                        for(let c=0; c<extraCols; c++){
+                            for(let b=0; b<extraBench; b++){
 
-                if(extraGrid[r][c][b] === null){
-                    extraGrid[r][c][b] = tempStudents.shift()
+                                if(tempStudents.length === 0) break
+
+                                if(extraGrid[r][c][b] === null){
+                                    extraGrid[r][c][b] = tempStudents.shift()
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
 
                 students = tempStudents
+
                 allRooms.push({
                     room: "Extra Room",
                     layout: extraGrid
                 })
             }
 
-            // ================= FORMAT =================
-            let clean = allRooms.map(room => ({
-                room: room.room,
-                layout: room.layout.map(row =>
-                    row.map(col =>
-                        col.map(s =>
-                            s
-                            ? `${s.name}\nReg: ${s.regno}\nDept: ${s.dept}\nSub: ${s.subject}`
-                            : "Empty"
-                        )
-                    )
-                )
-            }))
+            // ================= FORMAT + SUBJECT COUNT =================
+            let clean = allRooms.map(room => {
 
-            // ================= DEPT LIST =================
-            let roomDeptList = allRooms.map(room => {
-                let deptMap = {}
+    let subjectMap = {}
 
-                room.layout.forEach(row => {
-                    row.forEach(col => {
-                        col.forEach(s => {
-                            if(!s) return
+    room.layout.forEach(row => {
+        row.forEach(col => {
+            col.forEach(s => {
+                if(!s) return
 
-                            if(!deptMap[s.dept]){
-                                deptMap[s.dept] = []
-                            }
-
-                            deptMap[s.dept].push(
-                                `${s.name} (${s.regno} - ${s.subject})`
-                            )
-                        })
-                    })
-                })
-
-                return {
-                    room: room.room,
-                    departments: deptMap
+                if(!subjectMap[s.subject]){
+                    subjectMap[s.subject] = {
+                        count: 0,
+                        students: []
+                    }
                 }
-            })
 
-            // ================= FINAL RESULT =================
+                subjectMap[s.subject].count++
+                subjectMap[s.subject].students.push(s.regno)
+            })
+        })
+    })
+
+    return {
+        room: room.room,
+        subjectSummary: subjectMap, // ✅ updated name
+        layout: room.layout.map(row =>
+            row.map(col =>
+                col.map(s =>
+                    s
+                    ? `${s.name}\nReg: ${s.regno}\nDept: ${s.dept}\nSub: ${s.subject}`
+                    : "Empty"
+                )
+            )
+        )
+    }
+})
+            // ================= FINAL =================
             let result = {
                 seating: clean,
                 unseated: students.map(s =>
                     `${s.name} (${s.regno} - ${s.dept} - ${s.subject})`
                 ),
-                roomDeptList,
                 created_at: new Date()
             }
 
-            // ✅ SAVE HISTORY
             db.query(
                 "INSERT INTO seating_history (data) VALUES (?)",
                 [JSON.stringify(result)]
