@@ -404,10 +404,7 @@ app.get("/generate-seating", (req, res) => {
                 }
             }
 
-            // 3️⃣ FINAL FILL (no empty seats)
-            if(!placed && students.length > 0){
-                let s = students.shift()
-                placeStudent(grid, r, c, b, s)
+            // 3️⃣ FINAL FILL (no empty seats
             }
         }
     }
