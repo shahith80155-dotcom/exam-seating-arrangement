@@ -66,7 +66,7 @@ let password = document.getElementById("password").value
 let msgBox = document.getElementById("msg")
 
 if(username.trim() === "" || password.trim() === ""){
-    msgBox.innerText = "All fields are required ❌"
+    msgBox.innerText = "All fields are required "
     msgBox.style.color = "red"
     return
 }
@@ -99,7 +99,7 @@ body: JSON.stringify({username, password})
 
 })
 .catch(()=>{
-    msgBox.innerText = "Server error ❌"
+    msgBox.innerText = "Server error "
     msgBox.style.color = "red"
 })
 
