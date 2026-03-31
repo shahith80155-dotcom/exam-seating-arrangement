@@ -324,7 +324,7 @@ app.post("/upload-students", upload.fields([
 /* =========================
    GENERATE SEATING API
 ========================= */
-app.get("/generate-seating", (req, res) => {
+app.post("/generate-seating", (req, res) => {
 
     let strictMode = req.query.strict === "true"
 
