@@ -326,7 +326,9 @@ app.post("/upload-students", upload.fields([
 ========================= */
 app.post("/generate-seating", (req, res) => {
 
-    let strictMode = req.query.strict === "true"
+    // ✅ FIXED: get data from body
+    let { strict, extraRooms } = req.body
+    let strictMode = strict === true
 
     db.query("SELECT * FROM students", (err, studentsData) => {
         if(err) return res.send("Student fetch error ❌")
@@ -361,7 +363,6 @@ app.post("/generate-seating", (req, res) => {
 
                 solveSeating(grid, tempStudents, 0, {count:0}, strictMode)
 
-                // 🔥 FINAL FILL
                 fillRemaining(grid, tempStudents, strictMode)
 
                 students = tempStudents
@@ -372,23 +373,16 @@ app.post("/generate-seating", (req, res) => {
                 })
             })
 
-            // ================= EXTRA ROOMS =================
-            if(req.query.extra === "true" && students.length > 0){
+            // ================= EXTRA ROOMS (FIXED) =================
+            if(extraRooms && extraRooms.length > 0 && students.length > 0){
 
-                let extraCount = parseInt(req.query.extraCount) || 1
-                let extraNames = (req.query.extraNames || "").split(",")
+                extraRooms.forEach((room, index) => {
 
-                let extraRows = parseInt(req.query.rows) || 5
-                let extraCols = parseInt(req.query.cols) || 5
-                let extraBench = parseInt(req.query.bench) || 1
+                    if(students.length === 0) return
 
-                for(let x = 0; x < extraCount; x++){
-
-                    if(students.length === 0) break
-
-                    let extraGrid = Array.from({ length: extraRows }, () =>
-                        Array.from({ length: extraCols }, () =>
-                            Array(extraBench).fill(null)
+                    let extraGrid = Array.from({ length: room.row_count }, () =>
+                        Array.from({ length: room.col_count }, () =>
+                            Array(room.bench || 1).fill(null)
                         )
                     )
 
@@ -401,13 +395,13 @@ app.post("/generate-seating", (req, res) => {
                     students = tempStudents
 
                     allRooms.push({
-                        room: extraNames[x] || `Extra Room ${x+1}`,
+                        room: room.room_name || `Extra Room ${index+1}`,
                         layout: extraGrid
                     })
-                }
+                })
             }
 
-            // ================= FORMAT + SUBJECT MAP =================
+            // ================= FORMAT =================
             let clean = allRooms.map(room => {
 
                 let subjectMap = {}
